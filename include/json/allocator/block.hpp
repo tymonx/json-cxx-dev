@@ -49,7 +49,7 @@ namespace allocator {
 
 class Block final : public Allocator {
 public:
-    static constexpr auto DEFAULT_SIZE{4096u};
+    static constexpr auto DEFAULT_SIZE{64 * 512};
 
     Block() noexcept = default;
 
