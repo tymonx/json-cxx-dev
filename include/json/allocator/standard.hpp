@@ -44,8 +44,6 @@
 
 #include "json/allocator.hpp"
 
-#include <cstdint>
-
 namespace json {
 namespace allocator {
 

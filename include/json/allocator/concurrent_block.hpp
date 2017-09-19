@@ -46,7 +46,6 @@
 #include "json/allocator/block.hpp"
 
 #include <mutex>
-#include <cstdint>
 
 namespace json {
 namespace allocator {

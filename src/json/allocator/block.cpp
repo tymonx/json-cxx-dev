@@ -54,6 +54,8 @@ struct Header {
     Pool allocator;
 };
 
+static constexpr std::size_t MINIMAL_SIZE{2 * sizeof(Header)};
+
 Block::~Block() noexcept { }
 
 void* Block::allocate(std::size_t size) noexcept {
@@ -68,7 +70,7 @@ void* Block::allocate(std::size_t size) noexcept {
         }
 
         if (!ptr) {
-            auto block_size = Pool::MINIMAL_SIZE + size;
+            auto block_size = MINIMAL_SIZE + Pool::MINIMAL_SIZE + size;
 
             if (block_size < m_block_size) {
                 block_size = m_block_size;

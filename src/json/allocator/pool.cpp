@@ -54,7 +54,7 @@ struct Header {
     std::size_t size{0};
 };
 
-const std::size_t Pool::MINIMAL_SIZE{2 * (sizeof(Pool) + sizeof(Header))};
+const std::size_t Pool::MINIMAL_SIZE{2 * sizeof(Header)};
 
 static inline std::uintptr_t align(std::uintptr_t address) noexcept {
     return (address + sizeof(Header) + ALIGN_OFFSET) & ALIGN_MASK;
