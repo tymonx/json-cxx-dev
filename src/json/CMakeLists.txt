@@ -42,3 +42,8 @@ set_target_properties(json PROPERTIES
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
 )
+
+if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
+    set_source_files_properties(allocator.cpp PROPERTIES
+        COMPILE_FLAGS -Wno-exit-time-destructors)
+endif()

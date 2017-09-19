@@ -34,13 +34,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/allocator/pool.hpp
+ * @file json/allocator/standard.hpp
  *
  * @brief Interface
  */
 
-#ifndef JSON_ALLOCATOR_POOL_HPP
-#define JSON_ALLOCATOR_POOL_HPP
+#ifndef JSON_ALLOCATOR_STANDARD_HPP
+#define JSON_ALLOCATOR_STANDARD_HPP
 
 #include "json/allocator.hpp"
 
@@ -49,13 +49,9 @@
 namespace json {
 namespace allocator {
 
-class Pool final : public Allocator {
+class Standard final : public Allocator {
 public:
-    static const std::size_t MINIMAL_SIZE;
-
-    Pool(void* memory, std::size_t size) noexcept;
-
-    Pool(std::uintptr_t memory_begin, std::uintptr_t memory_end) noexcept;
+    Standard() noexcept = default;
 
     virtual void* allocate(std::size_t size) noexcept override;
 
@@ -63,39 +59,10 @@ public:
 
     virtual void deallocate(void* ptr) noexcept override;
 
-    bool valid(const void* ptr) const noexcept;
-
-    bool empty() const noexcept;
-
-    std::size_t size(const void* ptr) const noexcept;
-
-    virtual ~Pool() noexcept override;
-private:
-    Pool(const Pool&) = delete;
-    Pool& operator=(const Pool&) = delete;
-
-    std::uintptr_t m_memory_begin{0};
-    std::uintptr_t m_memory_end{0};
-    void* m_header_last{nullptr};
+    virtual ~Standard() noexcept override;
 };
 
-inline
-Pool::Pool(void* memory, std::size_t size) noexcept :
-    Pool{std::uintptr_t(memory), std::uintptr_t(memory) + size}
-{ }
-
-inline auto
-Pool::valid(const void* ptr) const noexcept -> bool {
-    return (std::uintptr_t(ptr) >= m_memory_begin) &&
-        (std::uintptr_t(ptr) < m_memory_end);
-}
-
-inline auto
-Pool::empty() const noexcept -> bool {
-    return (std::uintptr_t(m_header_last) < m_memory_begin);
-}
-
 }
 }
 
-#endif /* JSON_ALLOCATOR_POOL_HPP */
+#endif /* JSON_ALLOCATOR_STANDARD_HPP */

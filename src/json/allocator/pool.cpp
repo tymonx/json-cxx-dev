@@ -49,24 +49,22 @@ static constexpr std::uintptr_t ALIGN_MAX = alignof(std::max_align_t);
 static constexpr std::uintptr_t ALIGN_OFFSET = ALIGN_MAX - 1u;
 static constexpr std::uintptr_t ALIGN_MASK = ~ALIGN_OFFSET;
 
-struct Pool::Header {
+struct Header {
     Header* prev{nullptr};
     std::size_t size{0};
 };
 
-std::uintptr_t Pool::align(std::uintptr_t address) noexcept {
+const std::size_t Pool::MINIMAL_SIZE{2 * (sizeof(Pool) + sizeof(Header))};
+
+static inline std::uintptr_t align(std::uintptr_t address) noexcept {
     return (address + sizeof(Header) + ALIGN_OFFSET) & ALIGN_MASK;
 }
 
-std::uintptr_t Pool::align(void* address) noexcept {
-    return align(std::uintptr_t(address));
-}
-
-Pool::Header* Pool::header_cast(std::uintptr_t address) noexcept {
+static inline Header* header_cast(std::uintptr_t address) noexcept {
     return reinterpret_cast<Header*>(address - sizeof(Header));
 }
 
-Pool::Header* Pool::header_cast(void* address) noexcept {
+static inline Header* header_cast(const void* address) noexcept {
     return header_cast(std::uintptr_t(address));
 }
 
@@ -76,7 +74,7 @@ Pool::Pool(std::uintptr_t memory_begin, std::uintptr_t memory_end) noexcept :
     m_header_last{header_cast(m_memory_begin)}
 {
     if (m_memory_begin < m_memory_end) {
-        *m_header_last = {};
+        *static_cast<Header*>(m_header_last) = {};
     }
     else {
         m_header_last = nullptr;
@@ -85,38 +83,44 @@ Pool::Pool(std::uintptr_t memory_begin, std::uintptr_t memory_end) noexcept :
 
 Pool::~Pool() noexcept { }
 
+std::size_t Pool::size(const void* ptr) const noexcept {
+    return header_cast(ptr)->size;
+}
+
 void* Pool::allocate(std::size_t size) noexcept {
     void* ptr = nullptr;
 
     if (size) {
         Header* header_next = nullptr;
-        Header* header = m_header_last;
+        Header* header = static_cast<Header*>(m_header_last);
+        std::uintptr_t address = 0;
+        std::uintptr_t address_end = m_memory_end;
 
         while (header && !ptr) {
-            auto address_end = header_next ?
-                std::uintptr_t(header_next) : m_memory_end;
-
-            auto address = align(std::uintptr_t(header) + sizeof(Header) +
+            address = align(std::uintptr_t(header) + sizeof(Header) +
                     header->size);
 
             if ((address + size) <= address_end) {
-                Header* header_prev = header;
-                header = header_cast(address);
-                header->size = size;
-                header->prev = header_prev;
-
-                if (header_next) {
-                    header_next->prev = header;
-                }
-                else {
-                    m_header_last = header;
-                }
-
                 ptr = reinterpret_cast<void*>(address);
             }
             else {
+                address_end = std::uintptr_t(header);
                 header_next = header;
                 header = header->prev;
+            }
+        }
+
+        if (ptr) {
+            Header* header_prev = header;
+            header = header_cast(address);
+            header->size = size;
+            header->prev = header_prev;
+
+            if (header_next) {
+                header_next->prev = header;
+            }
+            else {
+                m_header_last = header;
             }
         }
     }
@@ -130,12 +134,12 @@ void* Pool::reallocate(void* ptr, std::size_t size) noexcept {
             auto header = header_cast(ptr);
 
             if (header->size < size) {
-                auto tmp = allocate(size);
-                if (tmp) {
-                    std::memcpy(tmp, ptr, header->size);
+                auto allocated = allocate(size);
+                if (allocated) {
+                    std::memcpy(allocated, ptr, header->size);
                     deallocate(ptr);
                 }
-                ptr = tmp;
+                ptr = allocated;
             }
             else {
                 header->size = size;
@@ -157,22 +161,19 @@ void Pool::deallocate(void* ptr) noexcept {
     if (ptr) {
         Header* header_next = nullptr;
         Header* header = header_cast(ptr);
-        Header* it = m_header_last;
+        Header* it = static_cast<Header*>(m_header_last);
 
-        while (it) {
-            if (it == header) {
-                if (header_next) {
-                    header_next->prev = header->prev;
-                }
-                else {
-                    m_header_last = header->prev;
-                }
+        while (it && (it != header)) {
+            header_next = it;
+            it = it->prev;
+        }
 
-                it = nullptr;
+        if (it) {
+            if (header_next) {
+                header_next->prev = header->prev;
             }
             else {
-                header_next = it;
-                it = it->prev;
+                m_header_last = header->prev;
             }
         }
     }

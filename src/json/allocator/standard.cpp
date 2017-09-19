@@ -34,68 +34,27 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/allocator/pool.hpp
+ * @file json/allocator/standard.cpp
  *
- * @brief Interface
+ * @brief Implementation
  */
 
-#ifndef JSON_ALLOCATOR_POOL_HPP
-#define JSON_ALLOCATOR_POOL_HPP
+#include "json/allocator/standard.hpp"
 
-#include "json/allocator.hpp"
+#include <cstdlib>
 
-#include <cstdint>
+using json::allocator::Standard;
 
-namespace json {
-namespace allocator {
+Standard::~Standard() noexcept { }
 
-class Pool final : public Allocator {
-public:
-    static const std::size_t MINIMAL_SIZE;
-
-    Pool(void* memory, std::size_t size) noexcept;
-
-    Pool(std::uintptr_t memory_begin, std::uintptr_t memory_end) noexcept;
-
-    virtual void* allocate(std::size_t size) noexcept override;
-
-    virtual void* reallocate(void* ptr, std::size_t size) noexcept override;
-
-    virtual void deallocate(void* ptr) noexcept override;
-
-    bool valid(const void* ptr) const noexcept;
-
-    bool empty() const noexcept;
-
-    std::size_t size(const void* ptr) const noexcept;
-
-    virtual ~Pool() noexcept override;
-private:
-    Pool(const Pool&) = delete;
-    Pool& operator=(const Pool&) = delete;
-
-    std::uintptr_t m_memory_begin{0};
-    std::uintptr_t m_memory_end{0};
-    void* m_header_last{nullptr};
-};
-
-inline
-Pool::Pool(void* memory, std::size_t size) noexcept :
-    Pool{std::uintptr_t(memory), std::uintptr_t(memory) + size}
-{ }
-
-inline auto
-Pool::valid(const void* ptr) const noexcept -> bool {
-    return (std::uintptr_t(ptr) >= m_memory_begin) &&
-        (std::uintptr_t(ptr) < m_memory_end);
+void* Standard::allocate(std::size_t size) noexcept {
+    return size ? std::malloc(size) : nullptr;
 }
 
-inline auto
-Pool::empty() const noexcept -> bool {
-    return (std::uintptr_t(m_header_last) < m_memory_begin);
+void* Standard::reallocate(void* ptr, std::size_t size) noexcept {
+    return (ptr || size) ? std::realloc(ptr, size) : nullptr;
 }
 
+void Standard::deallocate(void* ptr) noexcept {
+    std::free(ptr);
 }
-}
-
-#endif /* JSON_ALLOCATOR_POOL_HPP */

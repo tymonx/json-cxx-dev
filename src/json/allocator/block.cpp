@@ -43,28 +43,16 @@
 #include "json/allocator/pool.hpp"
 
 #include <new>
+#include <cstdlib>
 #include <cstring>
 
 using json::allocator::Block;
+using json::allocator::Pool;
 
-struct Block::Header {
+struct Header {
     Header* prev;
-    std::uint8_t* block;
     Pool allocator;
 };
-
-const std::uintptr_t Block::ALIGN_MAX = alignof(Header);
-const std::uintptr_t Block::ALIGN_OFFSET = ALIGN_MAX - 1u;
-const std::uintptr_t Block::ALIGN_MASK = ~ALIGN_OFFSET;
-const std::size_t Block::MINIMAL_SIZE = 4 * sizeof(Header);
-
-std::uintptr_t Block::align(std::uintptr_t address) noexcept {
-    return (address + sizeof(Header) + ALIGN_OFFSET) & ALIGN_MASK;
-}
-
-Block::Header* Block::header_cast(std::uintptr_t address) noexcept {
-    return reinterpret_cast<Header*>(address - sizeof(Header));
-}
 
 Block::~Block() noexcept { }
 
@@ -72,7 +60,7 @@ void* Block::allocate(std::size_t size) noexcept {
     void* ptr = nullptr;
 
     if (size) {
-        auto header = m_header_last;
+        auto header = static_cast<Header*>(m_header_last);
 
         while (header && !ptr) {
             ptr = header->allocator.allocate(size);
@@ -80,23 +68,21 @@ void* Block::allocate(std::size_t size) noexcept {
         }
 
         if (!ptr) {
-            auto block_size = MINIMAL_SIZE + size;
+            auto block_size = Pool::MINIMAL_SIZE + size;
 
             if (block_size < m_block_size) {
                 block_size = m_block_size;
             }
 
-            auto block = new (std::nothrow) std::uint8_t[block_size];
+            header = static_cast<Header*>(std::malloc(block_size));
 
-            if (block) {
-                auto memory_begin = align(std::uintptr_t(block));
-                auto memory_end = std::uintptr_t(block) + block_size;
-
-                header = header_cast(memory_begin);
-                header->block = block;
-                header->prev = m_header_last;
+            if (header) {
+                header->prev = static_cast<Header*>(m_header_last);
                 m_header_last = header;
-                new (&header->allocator) Pool(memory_begin, memory_end);
+                new (&header->allocator) Pool(
+                        std::uintptr_t(header) + sizeof(Header),
+                        std::uintptr_t(header) + block_size
+                    );
             }
         }
     }
@@ -107,33 +93,37 @@ void* Block::allocate(std::size_t size) noexcept {
 void* Block::reallocate(void* ptr, std::size_t size) noexcept {
     if (ptr) {
         if (size) {
-            Header* header = m_header_last;
+            Header* header = static_cast<Header*>(m_header_last);
             Header* header_next = nullptr;
 
-            while (header) {
-                if (header->allocator.is_valid(ptr)) {
-                    auto reallocated = header->allocator.reallocate(ptr, size);
-                    if (!reallocated) {
-                        reallocated = allocate(size);
-                        if (reallocated) {
-                            std::memcpy(reallocated, ptr, size);
-                            header->allocator.deallocate(ptr);
-                            if (header->allocator.empty()) {
-                                if (header_next) {
-                                    header_next->prev = header->prev;
-                                }
-                                header->allocator.~Pool();
-                                delete [] header->block;
+            while (header && !header->allocator.valid(ptr)) {
+                header_next = header;
+                header = header->prev;
+            }
+
+            if (header) {
+                auto reallocated = header->allocator.reallocate(ptr, size);
+                if (!reallocated) {
+                    reallocated = allocate(size);
+                    if (reallocated) {
+                        if (size > header->allocator.size(ptr)) {
+                            size = header->allocator.size(ptr);
+                        }
+                        std::memcpy(reallocated, ptr, size);
+                        header->allocator.deallocate(ptr);
+                        if (header->allocator.empty()) {
+                            if (header_next) {
+                                header_next->prev = header->prev;
                             }
+                            else {
+                                m_header_last = header->prev;
+                            }
+                            header->allocator.~Pool();
+                            std::free(header);
                         }
                     }
-                    ptr = reallocated;
-                    header = nullptr;
                 }
-                else {
-                    header_next = header;
-                    header = header->prev;
-                }
+                ptr = reallocated;
             }
         }
         else {
@@ -150,24 +140,25 @@ void* Block::reallocate(void* ptr, std::size_t size) noexcept {
 
 void Block::deallocate(void* ptr) noexcept {
     if (ptr) {
-        Header* header = m_header_last;
+        Header* header = static_cast<Header*>(m_header_last);
         Header* header_next = nullptr;
 
-        while (header) {
-            if (header->allocator.is_valid(ptr)) {
-                header->allocator.deallocate(ptr);
-                if (header->allocator.empty()) {
-                    if (header_next) {
-                        header_next->prev = header->prev;
-                    }
-                    header->allocator.~Pool();
-                    delete [] header->block;
+        while (header && !header->allocator.valid(ptr)) {
+            header_next = header;
+            header = header->prev;
+        }
+
+        if (header) {
+            header->allocator.deallocate(ptr);
+            if (header->allocator.empty()) {
+                if (header_next) {
+                    header_next->prev = header->prev;
                 }
-                header = nullptr;
-            }
-            else {
-                header_next = header;
-                header = header->prev;
+                else {
+                    m_header_last = header->prev;
+                }
+                header->allocator.~Pool();
+                std::free(header);
             }
         }
     }

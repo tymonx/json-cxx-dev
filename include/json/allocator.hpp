@@ -48,6 +48,8 @@ namespace json {
 
 class Allocator {
 public:
+    static Allocator* get_default() noexcept;
+
     Allocator() noexcept = default;
 
     virtual void* allocate(std::size_t size) noexcept = 0;

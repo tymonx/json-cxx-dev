@@ -65,18 +65,10 @@ public:
 
     virtual ~Block() noexcept override;
 private:
-    static const std::uintptr_t ALIGN_MAX;
-    static const std::uintptr_t ALIGN_OFFSET;
-    static const std::uintptr_t ALIGN_MASK;
-    static const std::size_t MINIMAL_SIZE;
+    Block(const Block&) = delete;
+    Block& operator=(const Block&) = delete;
 
-    struct Header;
-
-    static inline std::uintptr_t align(std::uintptr_t address) noexcept;
-
-    static inline Header* header_cast(std::uintptr_t address) noexcept;
-
-    Header* m_header_last{nullptr};
+    void* m_header_last{nullptr};
     std::size_t m_block_size{DEFAULT_SIZE};
 };
 

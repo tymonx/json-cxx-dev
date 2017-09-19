@@ -28,5 +28,8 @@
 # POSSIBILITY OF SUCH DAMAGE.
 
 add_library(json-allocator OBJECT
+    block.cpp
+    concurrent_block.cpp
     pool.cpp
+    standard.cpp
 )

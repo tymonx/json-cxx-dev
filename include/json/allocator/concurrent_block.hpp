@@ -34,28 +34,30 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/allocator/pool.hpp
+ * @file json/allocator/concurrent_block.hpp
  *
  * @brief Interface
  */
 
-#ifndef JSON_ALLOCATOR_POOL_HPP
-#define JSON_ALLOCATOR_POOL_HPP
+#ifndef JSON_ALLOCATOR_CONCURRENT_BLOCK_HPP
+#define JSON_ALLOCATOR_CONCURRENT_BLOCK_HPP
 
 #include "json/allocator.hpp"
+#include "json/allocator/block.hpp"
 
+#include <mutex>
 #include <cstdint>
 
 namespace json {
 namespace allocator {
 
-class Pool final : public Allocator {
+class ConcurrentBlock final : public Allocator {
 public:
-    static const std::size_t MINIMAL_SIZE;
+    static constexpr auto DEFAULT_SIZE{Block::DEFAULT_SIZE};
 
-    Pool(void* memory, std::size_t size) noexcept;
+    ConcurrentBlock() noexcept = default;
 
-    Pool(std::uintptr_t memory_begin, std::uintptr_t memory_end) noexcept;
+    ConcurrentBlock(std::size_t block_size) noexcept;
 
     virtual void* allocate(std::size_t size) noexcept override;
 
@@ -63,39 +65,18 @@ public:
 
     virtual void deallocate(void* ptr) noexcept override;
 
-    bool valid(const void* ptr) const noexcept;
-
-    bool empty() const noexcept;
-
-    std::size_t size(const void* ptr) const noexcept;
-
-    virtual ~Pool() noexcept override;
+    virtual ~ConcurrentBlock() noexcept override;
 private:
-    Pool(const Pool&) = delete;
-    Pool& operator=(const Pool&) = delete;
-
-    std::uintptr_t m_memory_begin{0};
-    std::uintptr_t m_memory_end{0};
-    void* m_header_last{nullptr};
+    std::mutex m_mutex{};
+    Block m_allocator{};
 };
 
 inline
-Pool::Pool(void* memory, std::size_t size) noexcept :
-    Pool{std::uintptr_t(memory), std::uintptr_t(memory) + size}
+ConcurrentBlock::ConcurrentBlock(std::size_t block_size) noexcept :
+    m_allocator{block_size}
 { }
 
-inline auto
-Pool::valid(const void* ptr) const noexcept -> bool {
-    return (std::uintptr_t(ptr) >= m_memory_begin) &&
-        (std::uintptr_t(ptr) < m_memory_end);
-}
-
-inline auto
-Pool::empty() const noexcept -> bool {
-    return (std::uintptr_t(m_header_last) < m_memory_begin);
-}
-
 }
 }
 
-#endif /* JSON_ALLOCATOR_POOL_HPP */
+#endif /* JSON_ALLOCATOR_CONCURRENT_BLOCK_HPP */

@@ -40,7 +40,13 @@
  */
 
 #include "json/allocator.hpp"
+#include "json/allocator/concurrent_block.hpp"
 
 using json::Allocator;
+
+Allocator* Allocator::get_default() noexcept {
+    static allocator::ConcurrentBlock instance;
+    return &instance;
+}
 
 Allocator::~Allocator() noexcept { }
