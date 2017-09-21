@@ -67,6 +67,8 @@ public:
     template<typename T>
     void deallocate(T* ptr) noexcept;
 
+    virtual std::size_t size(const void* ptr) const noexcept = 0;
+
     virtual ~Allocator() noexcept;
 private:
     Allocator(const Allocator&) = delete;

@@ -55,7 +55,7 @@ public:
 
     Pool(void* memory, std::size_t size) noexcept;
 
-    Pool(std::uintptr_t memory_begin, std::uintptr_t memory_end) noexcept;
+    Pool(void* memory_begin, void* memory_end) noexcept;
 
     virtual void* allocate(std::size_t size) noexcept override;
 
@@ -63,36 +63,35 @@ public:
 
     virtual void deallocate(void* ptr) noexcept override;
 
+    virtual std::size_t size(const void* ptr) const noexcept override;
+
     bool valid(const void* ptr) const noexcept;
 
     bool empty() const noexcept;
-
-    std::size_t size(const void* ptr) const noexcept;
 
     virtual ~Pool() noexcept override;
 private:
     Pool(const Pool&) = delete;
     Pool& operator=(const Pool&) = delete;
 
-    std::uintptr_t m_memory_begin{0};
-    std::uintptr_t m_memory_end{0};
+    void* m_memory_begin{nullptr};
+    void* m_memory_end{nullptr};
     void* m_header_last{nullptr};
 };
 
 inline
 Pool::Pool(void* memory, std::size_t size) noexcept :
-    Pool{std::uintptr_t(memory), std::uintptr_t(memory) + size}
+    Pool{memory, reinterpret_cast<void*>(std::uintptr_t(memory) + size)}
 { }
 
 inline auto
 Pool::valid(const void* ptr) const noexcept -> bool {
-    return (std::uintptr_t(ptr) >= m_memory_begin) &&
-        (std::uintptr_t(ptr) < m_memory_end);
+    return (ptr >= m_memory_begin) && (ptr < m_memory_end);
 }
 
 inline auto
 Pool::empty() const noexcept -> bool {
-    return (std::uintptr_t(m_header_last) < m_memory_begin);
+    return (m_header_last < m_memory_begin);
 }
 
 }

@@ -57,6 +57,8 @@ public:
 
     virtual void deallocate(void* ptr) noexcept override;
 
+    virtual std::size_t size(const void* ptr) const noexcept override;
+
     virtual ~Standard() noexcept override;
 };
 

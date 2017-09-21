@@ -41,7 +41,7 @@
 
 #include "json/allocator/pool.hpp"
 
-#include <cstring>
+#include <algorithm>
 
 using json::allocator::Pool;
 
@@ -56,19 +56,29 @@ struct Header {
 
 const std::size_t Pool::MINIMAL_SIZE{2 * sizeof(Header)};
 
-static inline std::uintptr_t align(std::uintptr_t address) noexcept {
-    return (address + sizeof(Header) + ALIGN_OFFSET) & ALIGN_MASK;
+static inline void* add(const void* address, std::uintptr_t offset) noexcept {
+    return reinterpret_cast<void*>(std::uintptr_t(address) + offset);
 }
 
-static inline Header* header_cast(std::uintptr_t address) noexcept {
-    return reinterpret_cast<Header*>(address - sizeof(Header));
+static inline void* align(const void* address) noexcept {
+    return reinterpret_cast<void*>((std::uintptr_t(address) + sizeof(Header) +
+                ALIGN_OFFSET) & ALIGN_MASK);
 }
 
 static inline Header* header_cast(const void* address) noexcept {
-    return header_cast(std::uintptr_t(address));
+    return reinterpret_cast<Header*>(std::uintptr_t(address) - sizeof(Header));
 }
 
-Pool::Pool(std::uintptr_t memory_begin, std::uintptr_t memory_end) noexcept :
+static inline void copy(const void* src, std::size_t len, void* dst) noexcept {
+    std::copy_n(static_cast<const std::uint8_t*>(src), len,
+            static_cast<std::uint8_t*>(dst));
+}
+
+static inline std::size_t distance(const void* lhs, const void* rhs) noexcept {
+    return std::size_t(std::uintptr_t(rhs) - std::uintptr_t(lhs));
+}
+
+Pool::Pool(void* memory_begin, void* memory_end) noexcept :
     m_memory_begin{align(memory_begin)},
     m_memory_end{memory_end},
     m_header_last{header_cast(m_memory_begin)}
@@ -83,29 +93,22 @@ Pool::Pool(std::uintptr_t memory_begin, std::uintptr_t memory_end) noexcept :
 
 Pool::~Pool() noexcept { }
 
-std::size_t Pool::size(const void* ptr) const noexcept {
-    return header_cast(ptr)->size;
-}
-
 void* Pool::allocate(std::size_t size) noexcept {
     void* ptr = nullptr;
 
     if (size) {
-        Header* header_next = nullptr;
         Header* header = static_cast<Header*>(m_header_last);
-        std::uintptr_t address = 0;
-        std::uintptr_t address_end = m_memory_end;
+        void* address = nullptr;
+        void* address_end = m_memory_end;
 
         while (header && !ptr) {
-            address = align(std::uintptr_t(header) + sizeof(Header) +
-                    header->size);
+            address = align(add(header, sizeof(Header) + header->size));
 
-            if ((address + size) <= address_end) {
-                ptr = reinterpret_cast<void*>(address);
+            if (add(address, size) <= address_end) {
+                ptr = address;
             }
             else {
-                address_end = std::uintptr_t(header);
-                header_next = header;
+                address_end = header;
                 header = header->prev;
             }
         }
@@ -116,11 +119,11 @@ void* Pool::allocate(std::size_t size) noexcept {
             header->size = size;
             header->prev = header_prev;
 
-            if (header_next) {
-                header_next->prev = header;
+            if (address_end == m_memory_end) {
+                m_header_last = header;
             }
             else {
-                m_header_last = header;
+                static_cast<Header*>(address_end)->prev = header;
             }
         }
     }
@@ -134,12 +137,29 @@ void* Pool::reallocate(void* ptr, std::size_t size) noexcept {
             auto header = header_cast(ptr);
 
             if (header->size < size) {
-                auto allocated = allocate(size);
-                if (allocated) {
-                    std::memcpy(allocated, ptr, header->size);
-                    deallocate(ptr);
+                void* address_end = static_cast<Header*>(m_memory_end);
+
+                if (header != m_header_last) {
+                    auto header_next = static_cast<Header*>(m_header_last);
+
+                    while (header_next && (header_next->prev != header)) {
+                        header_next = header_next->prev;
+                    }
+
+                    address_end = header_next;
                 }
-                ptr = allocated;
+
+                if (distance(ptr, address_end) < size) {
+                    auto allocated = allocate(size);
+                    if (allocated) {
+                        copy(ptr, header->size, allocated);
+                        deallocate(ptr);
+                    }
+                    ptr = allocated;
+                }
+                else {
+                    header->size = size;
+                }
             }
             else {
                 header->size = size;
@@ -177,4 +197,8 @@ void Pool::deallocate(void* ptr) noexcept {
             }
         }
     }
+}
+
+std::size_t Pool::size(const void* ptr) const noexcept {
+    return header_cast(ptr)->size;
 }

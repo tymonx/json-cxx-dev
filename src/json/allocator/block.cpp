@@ -43,8 +43,7 @@
 #include "json/allocator/pool.hpp"
 
 #include <new>
-#include <cstdlib>
-#include <cstring>
+#include <algorithm>
 
 using json::allocator::Block;
 using json::allocator::Pool;
@@ -54,7 +53,10 @@ struct Header {
     Pool allocator;
 };
 
-static constexpr std::size_t MINIMAL_SIZE{2 * sizeof(Header)};
+static inline void copy(const void* src, std::size_t len, void* dst) noexcept {
+    std::copy_n(static_cast<const std::uint8_t*>(src), len,
+            static_cast<std::uint8_t*>(dst));
+}
 
 Block::~Block() noexcept { }
 
@@ -70,21 +72,20 @@ void* Block::allocate(std::size_t size) noexcept {
         }
 
         if (!ptr) {
-            auto block_size = MINIMAL_SIZE + Pool::MINIMAL_SIZE + size;
+            auto block_size = sizeof(Header) + Pool::MINIMAL_SIZE + size;
 
             if (block_size < m_block_size) {
                 block_size = m_block_size;
             }
 
-            header = static_cast<Header*>(std::malloc(block_size));
+            auto block = new (std::nothrow) std::uint8_t[block_size];
 
-            if (header) {
+            if (block) {
+                header = reinterpret_cast<Header*>(block);
                 header->prev = static_cast<Header*>(m_header_last);
                 m_header_last = header;
-                new (&header->allocator) Pool(
-                        std::uintptr_t(header) + sizeof(Header),
-                        std::uintptr_t(header) + block_size
-                    );
+                new (&header->allocator) Pool(block + sizeof(Header),
+                        block + block_size);
             }
         }
     }
@@ -108,10 +109,13 @@ void* Block::reallocate(void* ptr, std::size_t size) noexcept {
                 if (!reallocated) {
                     reallocated = allocate(size);
                     if (reallocated) {
-                        if (size > header->allocator.size(ptr)) {
-                            size = header->allocator.size(ptr);
+                        auto allocated_size = header->allocator.size(ptr);
+
+                        if (allocated_size > size) {
+                            allocated_size = size;
                         }
-                        std::memcpy(reallocated, ptr, size);
+
+                        copy(ptr, allocated_size, reallocated);
                         header->allocator.deallocate(ptr);
                         if (header->allocator.empty()) {
                             if (header_next) {
@@ -121,7 +125,7 @@ void* Block::reallocate(void* ptr, std::size_t size) noexcept {
                                 m_header_last = header->prev;
                             }
                             header->allocator.~Pool();
-                            std::free(header);
+                            delete [] header;
                         }
                     }
                 }
@@ -160,8 +164,12 @@ void Block::deallocate(void* ptr) noexcept {
                     m_header_last = header->prev;
                 }
                 header->allocator.~Pool();
-                std::free(header);
+                delete [] header;
             }
         }
     }
+}
+
+std::size_t Block::size(const void* ptr) const noexcept {
+    return static_cast<Header*>(m_header_last)->allocator.size(ptr);
 }

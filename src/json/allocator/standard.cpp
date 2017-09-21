@@ -58,3 +58,7 @@ void* Standard::reallocate(void* ptr, std::size_t size) noexcept {
 void Standard::deallocate(void* ptr) noexcept {
     std::free(ptr);
 }
+
+std::size_t Standard::size(const void* /* ptr */) const noexcept {
+    return 0;
+}

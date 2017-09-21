@@ -40,13 +40,56 @@
  */
 
 #include "json/allocator.hpp"
-#include "json/allocator/concurrent_block.hpp"
 
 using json::Allocator;
+
+Allocator::~Allocator() noexcept { }
+
+#if defined(JSON_ALLOCATOR_CONCURRENT_BLOCK)
+
+#include "json/allocator/concurrent_block.hpp"
 
 Allocator* Allocator::get_default() noexcept {
     static allocator::ConcurrentBlock instance;
     return &instance;
 }
 
-Allocator::~Allocator() noexcept { }
+#elif defined(JSON_ALLOCATOR_BLOCK)
+
+#include "json/allocator/block.hpp"
+
+Allocator* Allocator::get_default() noexcept {
+    static allocator::Block instance;
+    return &instance;
+}
+
+#elif defined(JSON_ALLOCATOR_POOL)
+
+#include "json/allocator/pool.hpp"
+
+#include <array>
+#include <cstdint>
+
+#ifndef JSON_ALLOCATOR_POOL_SIZE
+    #define JSON_ALLOCATOR_POOL_SIZE 4096
+#endif
+
+static std::array<std::uint8_t, JSON_ALLOCATOR_POOL_SIZE> g_memory;
+
+Allocator* Allocator::get_default() noexcept {
+    static allocator::Pool instance{g_memory.data(), g_memory.size()};
+    return &instance;
+}
+
+#elif defined(JSON_ALLOCATOR_STANDARD)
+
+#include "json/allocator/standard.hpp"
+
+Allocator* Allocator::get_default() noexcept {
+    static allocator::Standard instance;
+    return &instance;
+}
+
+#else
+#error "Undefined default JSON allocator type"
+#endif

@@ -62,3 +62,7 @@ void ConcurrentBlock::deallocate(void* ptr) noexcept {
 
     m_allocator.deallocate(ptr);
 }
+
+std::size_t ConcurrentBlock::size(const void* ptr) const noexcept {
+    return m_allocator.size(ptr);
+}

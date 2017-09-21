@@ -49,7 +49,7 @@ namespace allocator {
 
 class Block final : public Allocator {
 public:
-    static constexpr auto DEFAULT_SIZE{64 * 512};
+    static constexpr auto DEFAULT_SIZE{32768};
 
     Block() noexcept = default;
 
@@ -60,6 +60,8 @@ public:
     virtual void* reallocate(void* ptr, std::size_t size) noexcept override;
 
     virtual void deallocate(void* ptr) noexcept override;
+
+    virtual std::size_t size(const void* ptr) const noexcept override;
 
     virtual ~Block() noexcept override;
 private:

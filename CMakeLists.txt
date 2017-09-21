@@ -32,7 +32,7 @@ project(json CXX)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${CMAKE_CURRENT_LIST_DIR}/cmake)
 
-if (CMAKE_TOOLCHAIN_FILE AND CMAKE_SYSTEM_NAME MATCHES "Generic")
+if (CMAKE_TOOLCHAIN_FILE AND CMAKE_SYSTEM_NAME MATCHES Generic)
     option(MEMORY_CHECK "Enable/disable memory checks" OFF)
     option(EXCEPTIONS "Enable/disable exceptions" OFF)
     option(RTTI "Enable/disable rtti" OFF)

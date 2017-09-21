@@ -30,8 +30,22 @@
 add_subdirectory(allocator)
 
 add_library(json-core OBJECT
+    string.cpp
     allocator.cpp
 )
+
+if (NOT JSON_ALLOCATOR_TYPE)
+    if (THREADS)
+        set(JSON_ALLOCATOR_TYPE JSON_ALLOCATOR_CONCURRENT_BLOCK)
+    elseif (CMAKE_TOOLCHAIN_FILE AND CMAKE_SYSTEM_NAME MATCHES Generic)
+        set(JSON_ALLOCATOR_TYPE JSON_ALLOCATOR_POOL)
+    else()
+        set(JSON_ALLOCATOR_TYPE JSON_ALLOCATOR_BLOCK)
+    endif()
+endif()
+
+set_source_files_properties(allocator.cpp PROPERTIES
+    COMPILE_DEFINITIONS ${JSON_ALLOCATOR_TYPE})
 
 add_library(json STATIC
     $<TARGET_OBJECTS:json-core>

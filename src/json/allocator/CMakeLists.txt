@@ -27,9 +27,16 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-add_library(json-allocator OBJECT
+set(CXX_SOURCES
     block.cpp
-    concurrent_block.cpp
     pool.cpp
     standard.cpp
 )
+
+if (THREADS)
+    set(CXX_SOURCES ${CXX_SOURCES}
+        concurrent_block.cpp
+    )
+endif()
+
+add_library(json-allocator OBJECT ${CXX_SOURCES})
