@@ -27,41 +27,5 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-add_subdirectory(allocator)
-
-add_library(json-core OBJECT
-    list.cpp
-    list_item.cpp
-    list_iterator.cpp
-    string.cpp
-    string_view.cpp
-    allocator.cpp
-)
-
-if (NOT JSON_ALLOCATOR_TYPE)
-    if (THREADS)
-        set(JSON_ALLOCATOR_TYPE JSON_ALLOCATOR_CONCURRENT_BLOCK)
-    elseif (CMAKE_TOOLCHAIN_FILE AND CMAKE_SYSTEM_NAME MATCHES Generic)
-        set(JSON_ALLOCATOR_TYPE JSON_ALLOCATOR_POOL)
-    else()
-        set(JSON_ALLOCATOR_TYPE JSON_ALLOCATOR_BLOCK)
-    endif()
-endif()
-
-set_source_files_properties(allocator.cpp PROPERTIES
-    COMPILE_DEFINITIONS ${JSON_ALLOCATOR_TYPE})
-
-add_library(json STATIC
-    $<TARGET_OBJECTS:json-core>
-    $<TARGET_OBJECTS:json-allocator>
-)
-
-set_target_properties(json PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-)
-
-if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    set_source_files_properties(allocator.cpp PROPERTIES
-        COMPILE_FLAGS -Wno-exit-time-destructors)
-endif()
+add_executable(main main.cpp)
+target_link_libraries(main json)

@@ -34,62 +34,15 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/allocator.hpp
+ * @file json/string_view.cpp
  *
- * @brief Interface
+ * @brief Implementation
  */
 
-#ifndef JSON_ALLOCATOR_HPP
-#define JSON_ALLOCATOR_HPP
+#include "json/string_view.hpp"
 
-#include <cstddef>
+using json::StringView;
 
-namespace json {
-
-class Allocator {
-public:
-    static Allocator& get_instance() noexcept;
-
-    Allocator() noexcept = default;
-
-    virtual void* allocate(std::size_t size) noexcept = 0;
-
-    template<typename T>
-    T* allocate(std::size_t n) noexcept;
-
-    virtual void* reallocate(void* ptr, std::size_t size) noexcept = 0;
-
-    template<typename T>
-    T* reallocate(T* ptr, std::size_t n) noexcept;
-
-    virtual void deallocate(void* ptr) noexcept = 0;
-
-    template<typename T>
-    void deallocate(T* ptr) noexcept;
-
-    virtual std::size_t size(const void* ptr) const noexcept = 0;
-
-    virtual ~Allocator() noexcept;
-private:
-    Allocator(const Allocator&) = delete;
-    Allocator& operator=(const Allocator&) = delete;
-};
-
-template<typename T> auto
-Allocator::allocate(std::size_t n) noexcept -> T* {
-    return static_cast<T*>(allocate(sizeof(T) * n));
+StringView StringView::subspan(size_type pos, size_type count) noexcept {
+    return Span::subspan(pos, count);
 }
-
-template<typename T> auto
-Allocator::reallocate(T* ptr, std::size_t n) noexcept -> T* {
-    return static_cast<T*>(reallocate(static_cast<void*>(ptr), sizeof(T) * n));
-}
-
-template<typename T> void
-Allocator::deallocate(T* ptr) noexcept {
-    deallocate(static_cast<void*>(ptr));
-}
-
-}
-
-#endif /* JSON_ALLOCATOR_HPP */

@@ -45,22 +45,13 @@ using json::Allocator;
 
 Allocator::~Allocator() noexcept { }
 
-#if defined(JSON_ALLOCATOR_CONCURRENT_BLOCK)
-
-#include "json/allocator/concurrent_block.hpp"
-
-Allocator* Allocator::get_default() noexcept {
-    static allocator::ConcurrentBlock instance;
-    return &instance;
-}
-
-#elif defined(JSON_ALLOCATOR_BLOCK)
+#if defined(JSON_ALLOCATOR_BLOCK)
 
 #include "json/allocator/block.hpp"
 
-Allocator* Allocator::get_default() noexcept {
+Allocator& Allocator::get_instance() noexcept {
     static allocator::Block instance;
-    return &instance;
+    return instance;
 }
 
 #elif defined(JSON_ALLOCATOR_POOL)
@@ -76,20 +67,27 @@ Allocator* Allocator::get_default() noexcept {
 
 static std::array<std::uint8_t, JSON_ALLOCATOR_POOL_SIZE> g_memory;
 
-Allocator* Allocator::get_default() noexcept {
+Allocator& Allocator::get_instance() noexcept {
     static allocator::Pool instance{g_memory.data(), g_memory.size()};
-    return &instance;
+    return instance;
 }
 
 #elif defined(JSON_ALLOCATOR_STANDARD)
 
 #include "json/allocator/standard.hpp"
 
-Allocator* Allocator::get_default() noexcept {
+Allocator& Allocator::get_instance() noexcept {
     static allocator::Standard instance;
-    return &instance;
+    return instance;
 }
 
 #else
-#error "Undefined default JSON allocator type"
+
+#include "json/allocator/concurrent_block.hpp"
+
+Allocator& Allocator::get_instance() noexcept {
+    static allocator::ConcurrentBlock instance;
+    return instance;
+}
+
 #endif

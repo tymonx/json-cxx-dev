@@ -34,62 +34,86 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/allocator.hpp
+ * @file json/list.cpp
  *
- * @brief Interface
+ * @brief Implementation
  */
 
-#ifndef JSON_ALLOCATOR_HPP
-#define JSON_ALLOCATOR_HPP
+#include "json/list.hpp"
 
-#include <cstddef>
+#include <type_traits>
 
-namespace json {
+using json::List;
 
-class Allocator {
-public:
-    static Allocator& get_instance() noexcept;
+static_assert(std::is_standard_layout<List>::value,
+        "json::List is not a standard layout");
 
-    Allocator() noexcept = default;
+void List::push_back(ListItem& item) noexcept {
+    item.prev = m_last;
+    item.next = nullptr;
 
-    virtual void* allocate(std::size_t size) noexcept = 0;
+    if (m_last) {
+        m_last->next = &item;
+    }
 
-    template<typename T>
-    T* allocate(std::size_t n) noexcept;
+    if (!m_first) {
+        m_first = &item;
+    }
 
-    virtual void* reallocate(void* ptr, std::size_t size) noexcept = 0;
-
-    template<typename T>
-    T* reallocate(T* ptr, std::size_t n) noexcept;
-
-    virtual void deallocate(void* ptr) noexcept = 0;
-
-    template<typename T>
-    void deallocate(T* ptr) noexcept;
-
-    virtual std::size_t size(const void* ptr) const noexcept = 0;
-
-    virtual ~Allocator() noexcept;
-private:
-    Allocator(const Allocator&) = delete;
-    Allocator& operator=(const Allocator&) = delete;
-};
-
-template<typename T> auto
-Allocator::allocate(std::size_t n) noexcept -> T* {
-    return static_cast<T*>(allocate(sizeof(T) * n));
+    m_last = &item;
 }
 
-template<typename T> auto
-Allocator::reallocate(T* ptr, std::size_t n) noexcept -> T* {
-    return static_cast<T*>(reallocate(static_cast<void*>(ptr), sizeof(T) * n));
+void List::pop_back() noexcept {
+    if (m_last) {
+        if (m_last->prev) {
+            m_last->prev->next = nullptr;
+        }
+        else {
+            m_first = nullptr;
+        }
+
+        auto item = m_last->prev;
+        m_last->prev = nullptr;
+        m_last = item;
+    }
 }
 
-template<typename T> void
-Allocator::deallocate(T* ptr) noexcept {
-    deallocate(static_cast<void*>(ptr));
+void List::push_front(ListItem& item) noexcept {
+    item.prev = nullptr;
+    item.next = m_first;
+
+    if (m_first) {
+        m_first->prev = &item;
+    }
+
+    if (!m_last) {
+        m_last = &item;
+    }
+
+    m_first = &item;
 }
 
+void List::pop_front() noexcept {
+    if (m_first) {
+        if (m_first->next) {
+            m_first->next->prev = nullptr;
+        }
+        else {
+            m_last = nullptr;
+        }
+
+        auto item = m_first->next;
+        m_first->next = nullptr;
+        m_first = item;
+    }
 }
 
-#endif /* JSON_ALLOCATOR_HPP */
+List::size_type List::size() const noexcept {
+    size_type count = 0;
+
+    for (auto it = m_first; it; it = it->next) {
+        ++count;
+    }
+
+    return count;
+}

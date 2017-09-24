@@ -34,62 +34,37 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/allocator.hpp
+ * @file json/allocator/dummy.hpp
  *
  * @brief Interface
  */
 
-#ifndef JSON_ALLOCATOR_HPP
-#define JSON_ALLOCATOR_HPP
+#ifndef JSON_ALLOCATOR_DUMMY_HPP
+#define JSON_ALLOCATOR_DUMMY_HPP
 
-#include <cstddef>
+#include "json/allocator.hpp"
 
 namespace json {
+namespace allocator {
 
-class Allocator {
+class Dummy final : public Allocator {
 public:
     static Allocator& get_instance() noexcept;
 
-    Allocator() noexcept = default;
+    Dummy() noexcept = default;
 
-    virtual void* allocate(std::size_t size) noexcept = 0;
+    virtual void* allocate(std::size_t size) noexcept override;
 
-    template<typename T>
-    T* allocate(std::size_t n) noexcept;
+    virtual void* reallocate(void* ptr, std::size_t size) noexcept override;
 
-    virtual void* reallocate(void* ptr, std::size_t size) noexcept = 0;
+    virtual void deallocate(void* ptr) noexcept override;
 
-    template<typename T>
-    T* reallocate(T* ptr, std::size_t n) noexcept;
+    virtual std::size_t size(const void* ptr) const noexcept override;
 
-    virtual void deallocate(void* ptr) noexcept = 0;
-
-    template<typename T>
-    void deallocate(T* ptr) noexcept;
-
-    virtual std::size_t size(const void* ptr) const noexcept = 0;
-
-    virtual ~Allocator() noexcept;
-private:
-    Allocator(const Allocator&) = delete;
-    Allocator& operator=(const Allocator&) = delete;
+    virtual ~Dummy() noexcept override;
 };
 
-template<typename T> auto
-Allocator::allocate(std::size_t n) noexcept -> T* {
-    return static_cast<T*>(allocate(sizeof(T) * n));
+}
 }
 
-template<typename T> auto
-Allocator::reallocate(T* ptr, std::size_t n) noexcept -> T* {
-    return static_cast<T*>(reallocate(static_cast<void*>(ptr), sizeof(T) * n));
-}
-
-template<typename T> void
-Allocator::deallocate(T* ptr) noexcept {
-    deallocate(static_cast<void*>(ptr));
-}
-
-}
-
-#endif /* JSON_ALLOCATOR_HPP */
+#endif /* JSON_ALLOCATOR_DUMMY_HPP */

@@ -41,78 +41,11 @@
 
 #include "json/string.hpp"
 
-#include <algorithm>
+#include <functional>
 
 using json::String;
 
 static constexpr String::value_type EMPTY_STRING[]{""};
-
-String::String(String&& other, allocator_type* alloc) noexcept :
-    m_allocator{alloc}
-{
-    if (other.allocator() == allocator()) {
-        m_data = other.data();
-        m_size = other.size();
-        other.m_allocator = nullptr;
-    }
-    else if (allocator()) {
-        m_data = allocator()->allocate<value_type>(other.size());
-        if (m_data) {
-            m_size = other.size();
-            std::copy_n(other.data(), other.size(), m_data);
-        }
-    }
-}
-
-String::String(size_type count, value_type ch, allocator_type* alloc) noexcept :
-    m_allocator{alloc}
-{
-    if (allocator()) {
-        m_data = allocator()->allocate<value_type>(count);
-        if (m_data) {
-            m_size = count;
-            std::fill_n(m_data, m_size, ch);
-        }
-    }
-}
-
-String::String(const_pointer s, size_type count, allocator_type* alloc) noexcept :
-    m_allocator{alloc}
-{
-    if (allocator()) {
-        m_data = allocator()->allocate<value_type>(count);
-        if (m_data) {
-            m_size = count;
-            std::copy_n(s, count,  m_data);
-        }
-    }
-}
-
-String::String(const String& other, size_type pos, size_type count,
-        allocator_type* alloc) noexcept :
-    m_allocator{alloc}
-{
-    auto total_length = other.length();
-
-    if (total_length > pos) {
-        total_length -= pos;
-    }
-    else {
-        total_length = 0;
-    }
-
-    if (count < total_length) {
-        total_length = count;
-    }
-
-    if (allocator()) {
-        m_data = allocator()->allocate<value_type>(total_length);
-        if (m_data) {
-            m_size = total_length;
-            std::copy_n(other.data(), total_length, m_data);
-        }
-    }
-}
 
 String::size_type String::length(const_pointer s) noexcept {
     size_type count = 0;
@@ -127,9 +60,60 @@ String::size_type String::length(const_pointer s) noexcept {
     return count;
 }
 
+void String::copy_n(const_pointer src, size_type count,
+        pointer dst) noexcept {
+    std::copy_n(src, count, dst);
+}
+
+void String::move_n(const_pointer src, size_type count,
+        pointer dst) noexcept {
+    std::copy_backward(src, src + count, dst + count);
+}
+
+void String::fill_n(const_pointer src, size_type count,
+        pointer dst) noexcept {
+    std::fill_n(dst, count, *src);
+}
+
+String::pointer String::insert(size_type index, const StringView& str,
+        Function function) noexcept {
+    if (index <= size()) {
+        auto total_size = size() + str.size();
+        resize(total_size);
+        if (size() == total_size) {
+            auto pos = data() + index;
+            move_n(pos, str.size(), pos + str.size());
+            function(str.data(), str.size(), pos);
+        }
+    }
+    else {
+        index = size();
+    }
+    return data() + index;
+}
+
+String& String::assign(String&& other) noexcept {
+    if (&other != this) {
+        if (&other.allocator() == &allocator()) {
+            m_data = other.data();
+            m_size = other.size();
+            other.m_data = nullptr;
+        }
+        else {
+            assign(std::cref(other));
+        }
+    }
+
+    return *this;
+}
+
+String::size_type String::capacity() const noexcept {
+    return allocator().size(data());
+}
+
 void String::shrink_to_fit() noexcept {
-    if (m_allocator && (m_allocator->size(m_data) != m_size)) {
-        auto ptr = m_allocator->reallocate(m_data, m_size);
+    if (capacity() > size()) {
+        auto ptr = allocator().reallocate(data(), size());
         if (ptr) {
             m_data = ptr;
         }
@@ -137,8 +121,8 @@ void String::shrink_to_fit() noexcept {
 }
 
 void String::reserve(size_type new_capacity) noexcept {
-    if (m_allocator && (m_allocator->size(m_data) < new_capacity)) {
-        auto ptr = m_allocator->reallocate(m_data, m_size);
+    if (capacity() < new_capacity) {
+        auto ptr = allocator().reallocate(data(), new_capacity);
         if (ptr) {
             m_data = ptr;
         }
@@ -146,89 +130,87 @@ void String::reserve(size_type new_capacity) noexcept {
 }
 
 void String::resize(size_type count) noexcept {
-    if (count <= m_size) {
-        m_size = count;
-    }
-    else if (m_allocator) {
-        auto ptr = m_allocator->reallocate(m_data, count);
+    if (capacity() < count) {
+        auto ptr = allocator().reallocate(data(), count);
         if (ptr) {
             m_data = ptr;
             m_size = count;
         }
+    }
+    else {
+        m_size = count;
     }
 }
 
 void String::resize(size_type count, value_type ch) noexcept {
-    if (count <= m_size) {
-        m_size = count;
-    }
-    else if (m_allocator) {
-        auto ptr = m_allocator->reallocate(m_data, count);
-        if (ptr) {
-            std::fill_n(ptr + m_size, count - m_size, ch);
-            m_data = ptr;
-            m_size = count;
-        }
+    auto offset = m_size;
+
+    resize(count);
+
+    if (offset < size()) {
+        fill_n(&ch, size() - offset, data() + offset);
     }
 }
 
 String::size_type String::copy(pointer dest, size_type count,
         size_type pos) const noexcept {
     if (dest) {
-        if (pos > m_size) {
-            pos = m_size;
-        }
-
-        auto diff = m_size - pos;
-
-        if (diff < count) {
-            count = diff;
-        }
-
-        std::copy_n(m_data + pos, count, dest);
+        auto str = StringView{*this}.subspan(pos, count);
+        copy_n(str.data(), str.size(), dest);
     }
     else {
         count = 0;
     }
-
     return count;
 }
 
 void String::push_back(value_type ch) noexcept {
-    if (m_allocator) {
-        if (m_size < m_allocator->size(m_data)) {
+    if (size() < capacity()) {
+        m_data[m_size++] = ch;
+    }
+    else {
+        auto ptr = allocator().allocate<value_type>(size() + 1);
+        if (ptr) {
+            m_data = ptr;
             m_data[m_size++] = ch;
-        }
-        else {
-            auto ptr = m_allocator->allocate<value_type>(m_size + 1);
-            if (ptr) {
-                m_data = ptr;
-                m_data[m_size++] = ch;
-            }
         }
     }
 }
 
 String::const_pointer String::c_str() noexcept {
-    String::const_pointer str = EMPTY_STRING;
+    String::const_pointer str = data();
 
-    if (m_data[m_size] != '\0') {
-        if (m_allocator) {
-            if (m_size < m_allocator->size(m_data)) {
-                m_data[m_size] = '\0';
+    if (m_data[size()] != '\0') {
+        if (size() < capacity()) {
+            m_data[size()] = '\0';
+        }
+        else {
+            str = allocator().reallocate<value_type>(data(), size() + 1);
+            if (str) {
+                m_data = const_cast<String::pointer>(str);
+                m_data[size()] = '\0';
             }
             else {
-                auto ptr = m_allocator->allocate<value_type>(m_size + 1);
-                if (ptr) {
-                    m_data = ptr;
-                    m_data[m_size] = '\0';
-                }
+                str = EMPTY_STRING;
             }
         }
     }
-    else {
-        str = m_data;
-    }
 
     return str;
+}
+
+String& String::erase(size_type index, size_type count) noexcept {
+    if (index <= size()) {
+        auto total_size = size() - index;
+
+        if (count > total_size) {
+            count = total_size;
+        }
+
+        auto pos = data() + index;
+        copy_n(pos + count, count, pos);
+
+        m_size -= count;
+    }
+    return *this;
 }

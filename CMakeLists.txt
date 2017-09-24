@@ -51,7 +51,7 @@ else()
 endif()
 
 option(TESTS "Enable/disable tests" OFF)
-option(EXAMPLES "Enable/disable examples" OFF)
+option(EXAMPLES "Enable/disable examples" ON)
 option(WARNINGS_INTO_ERRORS "Enable/disable warnings as errors" OFF)
 
 include(AddCodeCoverage)

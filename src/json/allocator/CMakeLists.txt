@@ -31,6 +31,7 @@ set(CXX_SOURCES
     block.cpp
     pool.cpp
     standard.cpp
+    dummy.cpp
 )
 
 if (THREADS)

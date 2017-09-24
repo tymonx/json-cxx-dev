@@ -34,62 +34,49 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/allocator.hpp
+ * @file json/list_iterator.cpp
  *
- * @brief Interface
+ * @brief Implementation
  */
 
-#ifndef JSON_ALLOCATOR_HPP
-#define JSON_ALLOCATOR_HPP
+#include "json/list_iterator.hpp"
 
-#include <cstddef>
+using json::ListIterator;
 
-namespace json {
+template<> auto
+ListIterator<false>::operator+(difference_type n) const noexcept
+        -> ListIterator {
+    ListIterator<false> it{m_item};
 
-class Allocator {
-public:
-    static Allocator& get_instance() noexcept;
+    if (n > 0) {
+        while (it && n--) {
+            it = it->next;
+        }
+    }
+    else if (n < 0) {
+        while (it && n++) {
+            it = it->prev;
+        }
+    }
 
-    Allocator() noexcept = default;
-
-    virtual void* allocate(std::size_t size) noexcept = 0;
-
-    template<typename T>
-    T* allocate(std::size_t n) noexcept;
-
-    virtual void* reallocate(void* ptr, std::size_t size) noexcept = 0;
-
-    template<typename T>
-    T* reallocate(T* ptr, std::size_t n) noexcept;
-
-    virtual void deallocate(void* ptr) noexcept = 0;
-
-    template<typename T>
-    void deallocate(T* ptr) noexcept;
-
-    virtual std::size_t size(const void* ptr) const noexcept = 0;
-
-    virtual ~Allocator() noexcept;
-private:
-    Allocator(const Allocator&) = delete;
-    Allocator& operator=(const Allocator&) = delete;
-};
-
-template<typename T> auto
-Allocator::allocate(std::size_t n) noexcept -> T* {
-    return static_cast<T*>(allocate(sizeof(T) * n));
+    return it;
 }
 
-template<typename T> auto
-Allocator::reallocate(T* ptr, std::size_t n) noexcept -> T* {
-    return static_cast<T*>(reallocate(static_cast<void*>(ptr), sizeof(T) * n));
-}
+template<> auto
+ListIterator<false>::operator-(difference_type n) const noexcept
+        -> ListIterator {
+    ListIterator<false> it{m_item};
 
-template<typename T> void
-Allocator::deallocate(T* ptr) noexcept {
-    deallocate(static_cast<void*>(ptr));
-}
+    if (n > 0) {
+        while (it && n--) {
+            it = it->prev;
+        }
+    }
+    else if (n < 0) {
+        while (it && n++) {
+            it = it->next;
+        }
+    }
 
+    return it;
 }
-
-#endif /* JSON_ALLOCATOR_HPP */

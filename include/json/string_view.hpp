@@ -9,11 +9,11 @@
  *
  * @copright
  * * Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
+ *   span of conditions and the following disclaimer.
  *
  * @copright
  * * Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
+ *   this span of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  *
  * @copright
@@ -34,62 +34,32 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/allocator.hpp
+ * @file json/string_view.hpp
  *
- * @brief Interface
+ * @brief JSON string view interface
  */
 
-#ifndef JSON_ALLOCATOR_HPP
-#define JSON_ALLOCATOR_HPP
+#ifndef JSON_STRING_VIEW_HPP
+#define JSON_STRING_VIEW_HPP
 
-#include <cstddef>
+#include "span.hpp"
 
 namespace json {
 
-class Allocator {
+class StringView : public Span<const char> {
 public:
-    static Allocator& get_instance() noexcept;
+    using Span::Span;
 
-    Allocator() noexcept = default;
+    StringView(const Span<const char>& other) noexcept;
 
-    virtual void* allocate(std::size_t size) noexcept = 0;
-
-    template<typename T>
-    T* allocate(std::size_t n) noexcept;
-
-    virtual void* reallocate(void* ptr, std::size_t size) noexcept = 0;
-
-    template<typename T>
-    T* reallocate(T* ptr, std::size_t n) noexcept;
-
-    virtual void deallocate(void* ptr) noexcept = 0;
-
-    template<typename T>
-    void deallocate(T* ptr) noexcept;
-
-    virtual std::size_t size(const void* ptr) const noexcept = 0;
-
-    virtual ~Allocator() noexcept;
-private:
-    Allocator(const Allocator&) = delete;
-    Allocator& operator=(const Allocator&) = delete;
+    StringView subspan(size_type pos, size_type count) noexcept;
 };
 
-template<typename T> auto
-Allocator::allocate(std::size_t n) noexcept -> T* {
-    return static_cast<T*>(allocate(sizeof(T) * n));
-}
-
-template<typename T> auto
-Allocator::reallocate(T* ptr, std::size_t n) noexcept -> T* {
-    return static_cast<T*>(reallocate(static_cast<void*>(ptr), sizeof(T) * n));
-}
-
-template<typename T> void
-Allocator::deallocate(T* ptr) noexcept {
-    deallocate(static_cast<void*>(ptr));
-}
+inline
+StringView::StringView(const Span<const char>& other) noexcept :
+    Span{other}
+{ }
 
 }
 
-#endif /* JSON_ALLOCATOR_HPP */
+#endif /* JSON_STRING_VIEW_HPP */
