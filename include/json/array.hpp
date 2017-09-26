@@ -43,18 +43,114 @@
 #define JSON_ARRAY_HPP
 
 #include "list.hpp"
+#include "types.hpp"
+#include "value.hpp"
 #include "allocator.hpp"
 #include "array_item.hpp"
+#include "array_iterator.hpp"
 
 namespace json {
 
 class Array {
 public:
+    using value_type = Value;
+    using size_type = Size;
+    using reference = value_type&;
+    using const_reference = const value_type&;
+    using pointer = value_type*;
+    using const_pointer = const value_type*;
+    using iterator = ArrayIterator<false>;
+    using const_iterator = ArrayIterator<true>;
+    using reverse_iterator = std::reverse_iterator<iterator>;
+    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+    iterator begin() noexcept;
+
+    const_iterator begin() const noexcept;
+
+    const_iterator cbegin() const noexcept;
+
+    iterator end() noexcept;
+
+    const_iterator end() const noexcept;
+
+    const_iterator cend() const noexcept;
+
+    reverse_iterator rbegin() noexcept;
+
+    const_reverse_iterator rbegin() const noexcept;
+
+    const_reverse_iterator crbegin() const noexcept;
+
+    reverse_iterator rend() noexcept;
+
+    const_reverse_iterator rend() const noexcept;
+
+    const_reverse_iterator crend() const noexcept;
 private:
     Allocator& m_allocator{Allocator::get_instance()};
     List m_list{};
 };
+
+inline auto
+Array::begin() noexcept -> iterator {
+    return m_list.begin();
+}
+
+inline auto
+Array::begin() const noexcept -> const_iterator {
+    return m_list.begin();
+}
+
+inline auto
+Array::cbegin() const noexcept -> const_iterator {
+    return m_list.cbegin();
+}
+
+inline auto
+Array::end() noexcept -> iterator {
+    return m_list.end();
+}
+
+inline auto
+Array::end() const noexcept -> const_iterator {
+    return m_list.end();
+}
+
+inline auto
+Array::cend() const noexcept -> const_iterator {
+    return m_list.cend();
+}
+
+inline auto
+Array::rbegin() noexcept -> reverse_iterator {
+    return m_list.rbegin();
+}
+
+inline auto
+Array::rbegin() const noexcept -> const_reverse_iterator {
+    return m_list.rbegin();
+}
+
+inline auto
+Array::crbegin() const noexcept -> const_reverse_iterator {
+    return m_list.crbegin();
+}
+
+inline auto
+Array::rend() noexcept -> reverse_iterator {
+    return m_list.rend();
+}
+
+inline auto
+Array::rend() const noexcept -> const_reverse_iterator {
+    return m_list.rend();
+}
+
+inline auto
+Array::crend() const noexcept -> const_reverse_iterator {
+    return m_list.crend();
+}
 
 }
 

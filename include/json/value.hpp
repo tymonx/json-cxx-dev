@@ -9,11 +9,11 @@
  *
  * @copright
  * * Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
+ *   span of conditions and the following disclaimer.
  *
  * @copright
  * * Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
+ *   this span of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  *
  * @copright
@@ -34,52 +34,44 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/list_iterator.cpp
+ * @file json/value.hpp
  *
- * @brief Implementation
+ * @brief JSON value interface
  */
 
-#include "json/list_iterator.hpp"
+#ifndef JSON_VALUE_HPP
+#define JSON_VALUE_HPP
 
-using json::ListIterator;
+#include "types.hpp"
 
-static_assert(std::is_standard_layout<json::ListItem>::value,
-        "json::ListItem is not a standard layout");
+namespace json {
 
-template<> auto
-ListIterator<false>::operator+(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
+class Value {
+public:
+    enum Type {
+        NIL,
+        BOOLEAN,
+        NUMBER,
+        STRING,
+        ARRAY,
+        OBJECT
+    };
 
-    if (n > 0) {
-        while (it && n--) {
-            it = it->next;
-        }
-    }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->prev;
-        }
-    }
+    Value() noexcept;
+private:
+    Type m_type{NIL};
 
-    return it;
+    union {
+        Null m_null;
+        Bool m_boolean;
+    };
+};
+
+inline
+Value::Value() noexcept :
+    m_null{nullptr}
+{ }
+
 }
 
-template<> auto
-ListIterator<false>::operator-(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
-
-    if (n > 0) {
-        while (it && n--) {
-            it = it->prev;
-        }
-    }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->next;
-        }
-    }
-
-    return it;
-}
+#endif /* JSON_VALUE_HPP */

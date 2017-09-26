@@ -9,11 +9,11 @@
  *
  * @copright
  * * Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
+ *   span of conditions and the following disclaimer.
  *
  * @copright
  * * Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
+ *   this span of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  *
  * @copright
@@ -34,16 +34,28 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/list_item.cpp
+ * @file json/types.hpp
  *
- * @brief Implementation
+ * @brief JSON types interface
  */
 
-#include "json/list_item.hpp"
+#ifndef JSON_TYPES_HPP
+#define JSON_TYPES_HPP
 
-#include <type_traits>
+#include <cstddef>
+#include <cstdint>
 
-using json::ListItem;
+namespace json {
 
-static_assert(std::is_standard_layout<ListItem>::value,
-        "json::ListItem is not a standard layout");
+using Char = char;
+using Null = std::nullptr_t;
+using Bool = bool;
+using Size = std::size_t;
+using Int = std::intmax_t;
+using Uint = std::uintmax_t;
+using Double = double;
+using Difference = std::ptrdiff_t;
+
+}
+
+#endif /* JSON_TYPES_HPP */

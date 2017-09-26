@@ -55,19 +55,77 @@ public:
     friend class ArrayIterator<true>;
 
     using value_type = typename std::conditional<is_const,
-          const ArrayItem, ArrayItem>::type;
+          const Value, Value>::type;
 
     using pointer = value_type*;
     using reference = value_type&;
-    using difference_type = std::ptrdiff_t;
-    using iterator_category = std::bidirectional_iterator_tag;
 
-    pointer operator->() noexcept {
-        return pointer(&*(*this));
-    }
+    using difference_type =
+        typename ListIterator<is_const>::difference_type;
+
+    using iterator_category =
+        typename ListIterator<is_const>::iterator_category;
+
+    using ListIterator<is_const>::ListIterator;
+
+    ArrayIterator(const ListIterator<is_const>& other) noexcept;
+
+    reference operator[](difference_type n) noexcept;
+
+    reference operator[](difference_type n) const noexcept;
+
+    pointer operator->() noexcept;
 
     pointer operator->() const noexcept;
+
+    reference operator*() noexcept;
+
+    reference operator*() const noexcept;
+private:
+    static constexpr std::ptrdiff_t VALUE_OFFSET =
+        offsetof(ArrayItem, value) - offsetof(ArrayItem, list);
 };
+
+template<bool is_const> inline
+ArrayIterator<is_const>::ArrayIterator(
+        const ListIterator<is_const>& other) noexcept :
+    ListIterator<is_const>{other}
+{ }
+
+template<bool is_const> inline auto
+ArrayIterator<is_const>::operator[](difference_type n) noexcept -> reference {
+    return pointer(std::intptr_t(&ListIterator<is_const>::operator[](n))
+            + VALUE_OFFSET);
+}
+
+template<bool is_const> inline auto
+ArrayIterator<is_const>::operator[](difference_type n) const noexcept
+        -> reference {
+    return pointer(std::intptr_t(&ListIterator<is_const>::operator[](n))
+            + VALUE_OFFSET);
+}
+
+template<bool is_const> inline auto
+ArrayIterator<is_const>::operator->() noexcept -> pointer {
+    return pointer(std::intptr_t(ListIterator<is_const>::operator->())
+            + VALUE_OFFSET);
+}
+
+template<bool is_const> inline auto
+ArrayIterator<is_const>::operator->() const noexcept -> pointer {
+    return pointer(std::intptr_t(ListIterator<is_const>::operator->())
+            + VALUE_OFFSET);
+}
+
+template<bool is_const> inline auto
+ArrayIterator<is_const>::operator*() noexcept -> reference {
+    return *operator->();
+}
+
+template<bool is_const> inline auto
+ArrayIterator<is_const>::operator*() const noexcept -> reference {
+    return *operator->();
+}
 
 }
 

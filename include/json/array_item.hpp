@@ -42,7 +42,10 @@
 #ifndef JSON_ARRAY_ITEM_HPP
 #define JSON_ARRAY_ITEM_HPP
 
+#include "value.hpp"
 #include "list_item.hpp"
+
+#include <cstddef>
 
 namespace json {
 
@@ -53,7 +56,7 @@ class ArrayItem {
     friend class ArrayIterator;
 
     ListItem list{};
-    int value{0};
+    Value value{};
 };
 
 }
