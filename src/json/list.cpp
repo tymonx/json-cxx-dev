@@ -45,8 +45,11 @@
 
 using json::List;
 
-static_assert(std::is_standard_layout<List>::value,
+static_assert(std::is_standard_layout<List>(),
         "json::List is not a standard layout");
+
+static_assert(std::is_standard_layout<json::ListItem>(),
+        "json::ListItem is not a standard layout");
 
 void List::push_back(ListItem& item) noexcept {
     item.prev = m_last;

@@ -34,52 +34,57 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/list_iterator.cpp
+ * @file json/value.cpp
  *
  * @brief Implementation
  */
 
-#include "json/list_iterator.hpp"
+#include "json/value.hpp"
 
-using json::ListIterator;
+#include <new>
+#include <type_traits>
 
-static_assert(std::is_standard_layout<json::ListItem>(),
-        "json::ListItem is not a standard layout");
+using json::Value;
 
-template<> auto
-ListIterator<false>::operator+(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
+static_assert(std::is_standard_layout<Value>(),
+        "json::Value is not a standard layout");
 
-    if (n > 0) {
-        while (it && n--) {
-            it = it->next;
-        }
+Value::Value(const Value& other) noexcept {
+    switch (type()) {
+    case NIL:
+        m_null = nullptr;
+        break;
+    case BOOLEAN:
+        m_boolean = other.m_boolean;
+        break;
+    case STRING:
+        new (&m_string) String();
+        break;
+    case NUMBER:
+        break;
+    case ARRAY:
+        break;
+    case OBJECT:
+        break;
+    default:
+        break;
     }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->prev;
-        }
-    }
-
-    return it;
 }
 
-template<> auto
-ListIterator<false>::operator-(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
-
-    if (n > 0) {
-        while (it && n--) {
-            it = it->prev;
-        }
+Value::~Value() noexcept {
+    switch (type()) {
+    case STRING:
+        m_string.~String();
+        break;
+    case NUMBER:
+        break;
+    case ARRAY:
+        break;
+    case OBJECT:
+        break;
+    case NIL:
+    case BOOLEAN:
+    default:
+        break;
     }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->next;
-        }
-    }
-
-    return it;
 }

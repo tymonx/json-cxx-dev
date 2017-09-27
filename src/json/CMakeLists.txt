@@ -30,6 +30,9 @@
 add_subdirectory(allocator)
 
 add_library(json-core OBJECT
+    array.cpp
+    array_iterator.cpp
+    value.cpp
     list.cpp
     list_iterator.cpp
     string.cpp

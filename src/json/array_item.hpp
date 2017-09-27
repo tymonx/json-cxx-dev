@@ -42,10 +42,8 @@
 #ifndef JSON_ARRAY_ITEM_HPP
 #define JSON_ARRAY_ITEM_HPP
 
-#include "value.hpp"
-#include "list_item.hpp"
-
-#include <cstddef>
+#include "json/value.hpp"
+#include "json/list_item.hpp"
 
 namespace json {
 

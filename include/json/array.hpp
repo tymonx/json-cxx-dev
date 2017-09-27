@@ -44,9 +44,7 @@
 
 #include "list.hpp"
 #include "types.hpp"
-#include "value.hpp"
 #include "allocator.hpp"
-#include "array_item.hpp"
 #include "array_iterator.hpp"
 
 namespace json {
@@ -64,7 +62,25 @@ public:
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+    void push_back(const value_type& value) noexcept;
+
+    void push_back(value_type&& value) noexcept;
+
+    void pop_back() noexcept;
+
+    void clear() noexcept;
+
+    size_type size() const noexcept;
+
+    bool empty() const noexcept;
+
+    reference back() noexcept;
+
+    const_reference back() const noexcept;
+
     iterator begin() noexcept;
+
+    Allocator& allocator() noexcept;
 
     const_iterator begin() const noexcept;
 
@@ -87,10 +103,37 @@ public:
     const_reverse_iterator rend() const noexcept;
 
     const_reverse_iterator crend() const noexcept;
+
+    ~Array() noexcept;
 private:
-    Allocator& m_allocator{Allocator::get_instance()};
+    Allocator* m_allocator{&Allocator::get_instance()};
     List m_list{};
 };
+
+inline auto
+Array::back() noexcept -> reference {
+    return *iterator{&m_list.back()};
+}
+
+inline auto
+Array::back() const noexcept -> const_reference {
+    return *const_iterator{&m_list.back()};
+}
+
+inline auto
+Array::allocator() noexcept -> Allocator& {
+    return *m_allocator;
+}
+
+inline auto
+Array::size() const noexcept -> size_type {
+    return m_list.size();
+}
+
+inline auto
+Array::empty() const noexcept -> bool {
+    return m_list.empty();
+}
 
 inline auto
 Array::begin() noexcept -> iterator {

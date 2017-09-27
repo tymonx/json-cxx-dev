@@ -43,14 +43,25 @@
 #define JSON_STRING_VIEW_HPP
 
 #include "span.hpp"
+#include "types.hpp"
 
 namespace json {
 
-class StringView : public Span<const char> {
+class StringView : public Span<const Char> {
 public:
     using Span::Span;
+    using Span::value_type;
+    using Span::difference_type;
+    using Span::pointer;
+    using Span::const_pointer;
+    using Span::reference;
+    using Span::const_reference;
+    using Span::iterator;
+    using Span::const_iterator;
+    using Span::reverse_iterator;
+    using Span::const_reverse_iterator;
 
-    StringView(const Span<const char>& other) noexcept;
+    StringView(const Span<const Char>& other) noexcept;
 
     StringView subspan(size_type pos, size_type count) noexcept;
 };

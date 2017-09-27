@@ -113,10 +113,10 @@ template<typename T>
 template<typename U, typename> inline
 SpanIterator<T>::SpanIterator(
         const SpanIterator<remove_const_t<T>>& other) noexcept :
-    m_ptr{other.m_ptr}
+    m_ptr{&*other}
 { }
 
-template<typename T>
+template<typename T> inline
 SpanIterator<T>::SpanIterator(pointer ptr) noexcept :
     m_ptr{ptr}
 { }

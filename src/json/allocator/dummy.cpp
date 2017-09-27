@@ -50,17 +50,17 @@ json::Allocator& Dummy::get_instance() noexcept {
 
 Dummy::~Dummy() noexcept { }
 
-void* Dummy::allocate(std::size_t /* size */) noexcept {
+void* Dummy::allocate(Size /* size */) noexcept {
     return nullptr;
 }
 
-void* Dummy::reallocate(void* /* ptr */, std::size_t /* size*/) noexcept {
+void* Dummy::reallocate(void* /* ptr */, Size /* size*/) noexcept {
     return nullptr;
 }
 
 void Dummy::deallocate(void* /* ptr */) noexcept {
 }
 
-std::size_t Dummy::size(const void* /* ptr */) const noexcept {
+json::Size Dummy::size(const void* /* ptr */) const noexcept {
     return 0;
 }

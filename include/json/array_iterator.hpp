@@ -42,29 +42,25 @@
 #ifndef JSON_ARRAY_ITERATOR_HPP
 #define JSON_ARRAY_ITERATOR_HPP
 
-#include "array_item.hpp"
 #include "list_iterator.hpp"
 
-#include <cstddef>
+#include <type_traits>
 
 namespace json {
+
+class Value;
 
 template<bool is_const>
 class ArrayIterator : public ListIterator<is_const> {
 public:
-    friend class ArrayIterator<true>;
-
     using value_type = typename std::conditional<is_const,
           const Value, Value>::type;
 
     using pointer = value_type*;
     using reference = value_type&;
 
-    using difference_type =
-        typename ListIterator<is_const>::difference_type;
-
-    using iterator_category =
-        typename ListIterator<is_const>::iterator_category;
+    using typename ListIterator<is_const>::difference_type;
+    using typename ListIterator<is_const>::iterator_category;
 
     using ListIterator<is_const>::ListIterator;
 
@@ -82,9 +78,30 @@ public:
 
     reference operator*() const noexcept;
 private:
-    static constexpr std::ptrdiff_t VALUE_OFFSET =
-        offsetof(ArrayItem, value) - offsetof(ArrayItem, list);
+    friend class ArrayIterator<true>;
+
+    pointer get() noexcept;
+
+    pointer get(difference_type n) noexcept;
 };
+
+template<> auto
+ArrayIterator<false>::get() noexcept -> pointer;
+
+template<> inline auto
+ArrayIterator<true>::get() noexcept -> pointer {
+    return ArrayIterator<false>{const_cast<
+        ListItem*>(ListIterator::operator->())}.get();
+}
+
+template<> auto
+ArrayIterator<false>::get(difference_type n) noexcept -> pointer;
+
+template<> inline auto
+ArrayIterator<true>::get(difference_type n) noexcept -> pointer {
+    return ArrayIterator<false>{const_cast<
+        ListItem*>(ListIterator::operator->())}.get(n);
+}
 
 template<bool is_const> inline
 ArrayIterator<is_const>::ArrayIterator(
@@ -94,37 +111,33 @@ ArrayIterator<is_const>::ArrayIterator(
 
 template<bool is_const> inline auto
 ArrayIterator<is_const>::operator[](difference_type n) noexcept -> reference {
-    return pointer(std::intptr_t(&ListIterator<is_const>::operator[](n))
-            + VALUE_OFFSET);
+    return *get(n);
 }
 
 template<bool is_const> inline auto
 ArrayIterator<is_const>::operator[](difference_type n) const noexcept
         -> reference {
-    return pointer(std::intptr_t(&ListIterator<is_const>::operator[](n))
-            + VALUE_OFFSET);
+    return *get(n);
 }
 
 template<bool is_const> inline auto
 ArrayIterator<is_const>::operator->() noexcept -> pointer {
-    return pointer(std::intptr_t(ListIterator<is_const>::operator->())
-            + VALUE_OFFSET);
+    return get();
 }
 
 template<bool is_const> inline auto
 ArrayIterator<is_const>::operator->() const noexcept -> pointer {
-    return pointer(std::intptr_t(ListIterator<is_const>::operator->())
-            + VALUE_OFFSET);
+    return get();
 }
 
 template<bool is_const> inline auto
 ArrayIterator<is_const>::operator*() noexcept -> reference {
-    return *operator->();
+    return *get();
 }
 
 template<bool is_const> inline auto
 ArrayIterator<is_const>::operator*() const noexcept -> reference {
-    return *operator->();
+    return *get();
 }
 
 }

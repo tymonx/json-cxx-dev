@@ -51,19 +51,19 @@ namespace allocator {
 
 class Pool final : public Allocator {
 public:
-    static const std::size_t MINIMAL_SIZE;
+    static const Size MINIMAL_SIZE;
 
-    Pool(void* memory, std::size_t size) noexcept;
+    Pool(void* memory, Size size) noexcept;
 
     Pool(void* memory_begin, void* memory_end) noexcept;
 
-    virtual void* allocate(std::size_t size) noexcept override;
+    virtual void* allocate(Size size) noexcept override;
 
-    virtual void* reallocate(void* ptr, std::size_t size) noexcept override;
+    virtual void* reallocate(void* ptr, Size size) noexcept override;
 
     virtual void deallocate(void* ptr) noexcept override;
 
-    virtual std::size_t size(const void* ptr) const noexcept override;
+    virtual Size size(const void* ptr) const noexcept override;
 
     bool valid(const void* ptr) const noexcept;
 
@@ -80,7 +80,7 @@ private:
 };
 
 inline
-Pool::Pool(void* memory, std::size_t size) noexcept :
+Pool::Pool(void* memory, Size size) noexcept :
     Pool{memory, reinterpret_cast<void*>(std::uintptr_t(memory) + size)}
 { }
 

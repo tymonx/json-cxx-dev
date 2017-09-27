@@ -42,6 +42,7 @@
 #ifndef JSON_LIST_ITERATOR_HPP
 #define JSON_LIST_ITERATOR_HPP
 
+#include "types.hpp"
 #include "list_item.hpp"
 
 #include <cstddef>
@@ -53,14 +54,12 @@ namespace json {
 template<bool is_const>
 class ListIterator {
 public:
-    friend class ListIterator<true>;
-
     using value_type = typename std::conditional<
         is_const, const ListItem, ListItem>::type;
 
     using pointer = value_type*;
     using reference = value_type&;
-    using difference_type = std::ptrdiff_t;
+    using difference_type = Difference;
     using iterator_category = std::bidirectional_iterator_tag;
 
     template<bool T>
@@ -117,10 +116,10 @@ private:
 template<bool is_const> template<bool T, typename> inline
 ListIterator<is_const>::ListIterator(
         const ListIterator<false>& other) noexcept :
-    m_item{other.m_item}
+    m_item{other.ListIterator::operator->()}
 { }
 
-template<bool is_const>
+template<bool is_const> inline
 ListIterator<is_const>::ListIterator(pointer ptr) noexcept :
     m_item{ptr}
 { }
@@ -165,14 +164,14 @@ ListIterator<true>::operator+(difference_type n) const noexcept ->
 template<> inline auto
 ListIterator<false>::operator+=(difference_type n) noexcept ->
         ListIterator& {
-     return (*this = ListIterator<false>{const_cast<std::remove_const<
+     return *this = (ListIterator<false>{const_cast<std::remove_const<
         value_type>::type*>(m_item)} + n);
 }
 
 template<> inline auto
 ListIterator<true>::operator+=(difference_type n) noexcept ->
         ListIterator& {
-    return (*this = ListIterator<false>{const_cast<std::remove_const<
+    return *this = (ListIterator<false>{const_cast<std::remove_const<
         value_type>::type*>(m_item)} + n);
 }
 
@@ -190,14 +189,14 @@ ListIterator<true>::operator-(difference_type n) const noexcept ->
 template<> inline auto
 ListIterator<false>::operator-=(difference_type n) noexcept ->
         ListIterator& {
-     return (*this = ListIterator<false>{const_cast<std::remove_const<
+     return *this = (ListIterator<false>{const_cast<std::remove_const<
         value_type>::type*>(m_item)} - n);
 }
 
 template<> inline auto
 ListIterator<true>::operator-=(difference_type n) noexcept ->
         ListIterator& {
-    return (*this = ListIterator<false>{const_cast<std::remove_const<
+    return *this = (ListIterator<false>{const_cast<std::remove_const<
         value_type>::type*>(m_item)} - n);
 }
 
@@ -237,15 +236,15 @@ ListIterator<is_const>::operator bool() const noexcept {
     return (nullptr != m_item);
 }
 
-static inline auto
-operator==(const ListIterator<true>& lhs,
-        const ListIterator<true>& rhs) noexcept -> bool {
+template<bool lhs_is_const, bool rhs_is_const> static inline auto
+operator==(const ListIterator<lhs_is_const>& lhs,
+        const ListIterator<rhs_is_const>& rhs) noexcept -> bool {
     return &(*lhs) == &(*rhs);
 }
 
-static inline auto
-operator!=(const ListIterator<true>& lhs,
-        const ListIterator<true>& rhs) noexcept -> bool {
+template<bool lhs_is_const, bool rhs_is_const> static inline auto
+operator!=(const ListIterator<lhs_is_const>& lhs,
+        const ListIterator<rhs_is_const>& rhs) noexcept -> bool {
     return &(*lhs) != &(*rhs);
 }
 

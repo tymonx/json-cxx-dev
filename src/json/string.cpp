@@ -42,10 +42,14 @@
 #include "json/string.hpp"
 
 #include <functional>
+#include <type_traits>
 
 using json::String;
 
 static constexpr String::value_type EMPTY_STRING[]{""};
+
+static_assert(std::is_standard_layout<String>(),
+        "json::String is not a standard layout");
 
 String::size_type String::length(const_pointer s) noexcept {
     size_type count = 0;
@@ -73,6 +77,11 @@ void String::move_n(const_pointer src, size_type count,
 void String::fill_n(const_pointer src, size_type count,
         pointer dst) noexcept {
     std::fill_n(dst, count, *src);
+}
+
+String& String::insert(size_type index, const_pointer s) noexcept {
+    insert(index, {s, length(s)}, copy_n);
+    return *this;
 }
 
 String::pointer String::insert(size_type index, const StringView& str,

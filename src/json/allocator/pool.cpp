@@ -43,6 +43,7 @@
 
 #include <algorithm>
 
+using json::Size;
 using json::allocator::Pool;
 
 static constexpr std::uintptr_t ALIGN_MAX = alignof(std::max_align_t);
@@ -51,10 +52,10 @@ static constexpr std::uintptr_t ALIGN_MASK = ~ALIGN_OFFSET;
 
 struct Header {
     Header* prev{nullptr};
-    std::size_t size{0};
+    Size size{0};
 };
 
-const std::size_t Pool::MINIMAL_SIZE{2 * sizeof(Header)};
+const Size Pool::MINIMAL_SIZE{2 * sizeof(Header)};
 
 static inline void* add(const void* address, std::uintptr_t offset) noexcept {
     return reinterpret_cast<void*>(std::uintptr_t(address) + offset);
@@ -69,13 +70,13 @@ static inline Header* header_cast(const void* address) noexcept {
     return reinterpret_cast<Header*>(std::uintptr_t(address) - sizeof(Header));
 }
 
-static inline void copy(const void* src, std::size_t len, void* dst) noexcept {
+static inline void copy(const void* src, Size len, void* dst) noexcept {
     std::copy_n(static_cast<const std::uint8_t*>(src), len,
             static_cast<std::uint8_t*>(dst));
 }
 
-static inline std::size_t distance(const void* lhs, const void* rhs) noexcept {
-    return std::size_t(std::uintptr_t(rhs) - std::uintptr_t(lhs));
+static inline Size distance(const void* lhs, const void* rhs) noexcept {
+    return Size(std::uintptr_t(rhs) - std::uintptr_t(lhs));
 }
 
 Pool::Pool(void* memory_begin, void* memory_end) noexcept :
@@ -93,7 +94,7 @@ Pool::Pool(void* memory_begin, void* memory_end) noexcept :
 
 Pool::~Pool() noexcept { }
 
-void* Pool::allocate(std::size_t size) noexcept {
+void* Pool::allocate(Size size) noexcept {
     void* ptr = nullptr;
 
     if (size) {
@@ -131,7 +132,7 @@ void* Pool::allocate(std::size_t size) noexcept {
     return ptr;
 }
 
-void* Pool::reallocate(void* ptr, std::size_t size) noexcept {
+void* Pool::reallocate(void* ptr, Size size) noexcept {
     if (ptr) {
         if (size) {
             auto header = header_cast(ptr);
@@ -199,6 +200,6 @@ void Pool::deallocate(void* ptr) noexcept {
     }
 }
 
-std::size_t Pool::size(const void* ptr) const noexcept {
+json::Size Pool::size(const void* ptr) const noexcept {
     return header_cast(ptr)->size;
 }

@@ -53,14 +53,14 @@ struct Header {
     Pool allocator;
 };
 
-static inline void copy(const void* src, std::size_t len, void* dst) noexcept {
+static inline void copy(const void* src, json::Size len, void* dst) noexcept {
     std::copy_n(static_cast<const std::uint8_t*>(src), len,
             static_cast<std::uint8_t*>(dst));
 }
 
 Block::~Block() noexcept { }
 
-void* Block::allocate(std::size_t size) noexcept {
+void* Block::allocate(Size size) noexcept {
     void* ptr = nullptr;
 
     if (size) {
@@ -93,7 +93,7 @@ void* Block::allocate(std::size_t size) noexcept {
     return ptr;
 }
 
-void* Block::reallocate(void* ptr, std::size_t size) noexcept {
+void* Block::reallocate(void* ptr, Size size) noexcept {
     if (ptr) {
         if (size) {
             Header* header = static_cast<Header*>(m_header_last);
@@ -170,6 +170,6 @@ void Block::deallocate(void* ptr) noexcept {
     }
 }
 
-std::size_t Block::size(const void* ptr) const noexcept {
+json::Size Block::size(const void* ptr) const noexcept {
     return static_cast<Header*>(m_header_last)->allocator.size(ptr);
 }

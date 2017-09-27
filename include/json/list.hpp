@@ -42,6 +42,7 @@
 #ifndef JSON_LIST_HPP
 #define JSON_LIST_HPP
 
+#include "types.hpp"
 #include "list_item.hpp"
 #include "list_iterator.hpp"
 
@@ -52,7 +53,7 @@ namespace json {
 class List {
 public:
     using value_type = ListItem;
-    using size_type = std::size_t;
+    using size_type = Size;
     using reference = value_type&;
     using const_reference = const value_type&;
     using pointer = value_type*;

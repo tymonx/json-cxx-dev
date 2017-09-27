@@ -42,6 +42,8 @@
 #ifndef JSON_ALLOCATOR_HPP
 #define JSON_ALLOCATOR_HPP
 
+#include "types.hpp"
+
 #include <cstddef>
 
 namespace json {
@@ -52,22 +54,22 @@ public:
 
     Allocator() noexcept = default;
 
-    virtual void* allocate(std::size_t size) noexcept = 0;
+    virtual void* allocate(Size size) noexcept = 0;
 
     template<typename T>
-    T* allocate(std::size_t n) noexcept;
+    T* allocate(Size n = 1) noexcept;
 
-    virtual void* reallocate(void* ptr, std::size_t size) noexcept = 0;
+    virtual void* reallocate(void* ptr, Size size) noexcept = 0;
 
     template<typename T>
-    T* reallocate(T* ptr, std::size_t n) noexcept;
+    T* reallocate(T* ptr, Size n = 1) noexcept;
 
     virtual void deallocate(void* ptr) noexcept = 0;
 
     template<typename T>
     void deallocate(T* ptr) noexcept;
 
-    virtual std::size_t size(const void* ptr) const noexcept = 0;
+    virtual Size size(const void* ptr) const noexcept = 0;
 
     virtual ~Allocator() noexcept;
 private:
@@ -76,12 +78,12 @@ private:
 };
 
 template<typename T> auto
-Allocator::allocate(std::size_t n) noexcept -> T* {
+Allocator::allocate(Size n) noexcept -> T* {
     return static_cast<T*>(allocate(sizeof(T) * n));
 }
 
 template<typename T> auto
-Allocator::reallocate(T* ptr, std::size_t n) noexcept -> T* {
+Allocator::reallocate(T* ptr, Size n) noexcept -> T* {
     return static_cast<T*>(reallocate(static_cast<void*>(ptr), sizeof(T) * n));
 }
 

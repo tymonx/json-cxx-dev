@@ -53,13 +53,13 @@ public:
 
     Dummy() noexcept = default;
 
-    virtual void* allocate(std::size_t size) noexcept override;
+    virtual void* allocate(Size size) noexcept override;
 
-    virtual void* reallocate(void* ptr, std::size_t size) noexcept override;
+    virtual void* reallocate(void* ptr, Size size) noexcept override;
 
     virtual void deallocate(void* ptr) noexcept override;
 
-    virtual std::size_t size(const void* ptr) const noexcept override;
+    virtual Size size(const void* ptr) const noexcept override;
 
     virtual ~Dummy() noexcept override;
 };

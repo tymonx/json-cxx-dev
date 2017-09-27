@@ -34,52 +34,64 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/list_iterator.cpp
+ * @file json/array.cpp
  *
  * @brief Implementation
  */
 
-#include "json/list_iterator.hpp"
+#include "json/array.hpp"
 
-using json::ListIterator;
+#include "array_item.hpp"
 
-static_assert(std::is_standard_layout<json::ListItem>(),
-        "json::ListItem is not a standard layout");
+#include <new>
+#include <cstddef>
+#include <utility>
+#include <type_traits>
 
-template<> auto
-ListIterator<false>::operator+(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
+using json::Array;
 
-    if (n > 0) {
-        while (it && n--) {
-            it = it->next;
-        }
+static_assert(std::is_standard_layout<Array>(),
+        "json::Array is not a standard layout");
+
+static_assert(std::is_standard_layout<json::ArrayItem>(),
+        "json::ArrayItem is not a standard layout");
+
+Array::~Array() noexcept {
+    for (auto it = m_list.begin(); it != m_list.end(); ++it) {
+        iterator{it}->~Value();
+        allocator().deallocate(&*it);
     }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->prev;
-        }
-    }
-
-    return it;
 }
 
-template<> auto
-ListIterator<false>::operator-(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
-
-    if (n > 0) {
-        while (it && n--) {
-            it = it->prev;
-        }
+void Array::push_back(const value_type& value) noexcept {
+    auto ptr = allocator().allocate<ArrayItem>();
+    if (ptr) {
+        new (&ptr->value) Value(value);
+        m_list.push_back(ptr->list);
     }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->next;
-        }
-    }
+}
 
-    return it;
+void Array::push_back(value_type&& value) noexcept {
+    auto ptr = allocator().allocate<ArrayItem>();
+    if (ptr) {
+        new (&ptr->value) Value(std::move(value));
+        m_list.push_back(ptr->list);
+    }
+}
+
+void Array::pop_back() noexcept {
+    if (!empty()) {
+        auto ptr = &m_list.back();
+        iterator{ptr}->~Value();
+        m_list.pop_back();
+        allocator().deallocate(ptr);
+    }
+}
+
+void Array::clear() noexcept {
+    for (auto it = m_list.begin(); it != m_list.end(); ++it) {
+        iterator{it}->~Value();
+        allocator().deallocate(&*it);
+    }
+    m_list.clear();
 }

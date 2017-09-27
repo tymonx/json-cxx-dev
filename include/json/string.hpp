@@ -42,6 +42,7 @@
 #ifndef JSON_STRING_HPP
 #define JSON_STRING_HPP
 
+#include "types.hpp"
 #include "allocator.hpp"
 #include "string_view.hpp"
 
@@ -57,8 +58,8 @@ namespace json {
 
 class String {
 public:
-    using size_type = std::size_t;
-    using value_type = char;
+    using size_type = Size;
+    using value_type = Char;
     using reference = value_type&;
     using const_reference = const value_type&;
     using pointer = value_type*;
@@ -254,7 +255,7 @@ private:
     pointer insert(size_type index, const StringView& str,
             Function function) noexcept;
 
-    allocator_type& m_allocator{Allocator::get_instance()};
+    allocator_type* m_allocator{&Allocator::get_instance()};
     pointer m_data{nullptr};
     size_type m_size{0};
 };
@@ -266,7 +267,7 @@ String::String(const String& other) noexcept {
 
 inline
 String::String(const String& other, allocator_type& alloc) noexcept :
-    m_allocator{alloc}
+    m_allocator{&alloc}
 {
     insert(0, other);
 }
@@ -278,34 +279,34 @@ String::String(String&& other) noexcept {
 
 inline
 String::String(String&& other, allocator_type& alloc) noexcept :
-    m_allocator{alloc}
+    m_allocator{&alloc}
 {
     assign(std::move(other));
 }
 
 inline
 String::String(allocator_type& alloc) noexcept :
-    m_allocator{alloc}
+    m_allocator{&alloc}
 { }
 
 inline
 String::String(const String& other, size_type pos, size_type count,
         allocator_type& alloc) noexcept :
-    m_allocator{alloc}
+    m_allocator{&alloc}
 {
     insert(0, other, pos, count);
 }
 
 inline
 String::String(size_type count, value_type ch, allocator_type& alloc) noexcept :
-    m_allocator{alloc}
+    m_allocator{&alloc}
 {
     insert(size_type(0), count, ch);
 }
 
 inline
 String::String(const_pointer s, allocator_type& alloc) noexcept :
-    m_allocator{alloc}
+    m_allocator{&alloc}
 {
     insert(0, s);
 }
@@ -313,14 +314,14 @@ String::String(const_pointer s, allocator_type& alloc) noexcept :
 inline
 String::String(const_pointer s, size_type count,
         allocator_type& alloc) noexcept :
-    m_allocator{alloc}
+    m_allocator{&alloc}
 {
     insert(0, s, count);
 }
 
 template<typename InputIt>
 String::String(InputIt first, InputIt last, allocator_type& alloc) noexcept :
-    m_allocator{alloc}
+    m_allocator{&alloc}
 {
     assign(first, last);
 }
@@ -328,7 +329,7 @@ String::String(InputIt first, InputIt last, allocator_type& alloc) noexcept :
 inline
 String::String(std::initializer_list<value_type> ilist,
         allocator_type& alloc) noexcept :
-    m_allocator{alloc}
+    m_allocator{&alloc}
 {
     assign(ilist);
 }
@@ -391,7 +392,7 @@ String::assign(const String& other, size_type pos,
 }
 
 inline auto
-String::assign(const_pointer s, std::size_t count) noexcept -> String& {
+String::assign(const_pointer s, size_type count) noexcept -> String& {
     clear();
     insert(0, StringView{s, count}, copy_n);
     return *this;
@@ -556,12 +557,6 @@ String::clear() noexcept {
 }
 
 inline auto
-String::insert(size_type index, const_pointer s) noexcept -> String& {
-    insert(index, {s, length(s)}, copy_n);
-    return *this;
-}
-
-inline auto
 String::insert(size_type index, const String& str) noexcept -> String& {
     return insert(index, str.data(), str.size());
 }
@@ -617,12 +612,12 @@ String::erase(const_iterator position) noexcept -> iterator {
 
 inline auto
 String::allocator() noexcept -> allocator_type& {
-    return m_allocator;
+    return *m_allocator;
 }
 
 inline auto
 String::allocator() const noexcept -> const allocator_type& {
-    return m_allocator;
+    return *m_allocator;
 }
 
 inline

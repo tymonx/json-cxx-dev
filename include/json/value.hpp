@@ -43,6 +43,8 @@
 #define JSON_VALUE_HPP
 
 #include "types.hpp"
+#include "array.hpp"
+#include "string.hpp"
 
 namespace json {
 
@@ -58,12 +60,20 @@ public:
     };
 
     Value() noexcept;
+
+    Value(const Value& other) noexcept;
+
+    Type type() const noexcept;
+
+    ~Value() noexcept;
 private:
     Type m_type{NIL};
 
     union {
         Null m_null;
         Bool m_boolean;
+        String m_string;
+        Array m_array;
     };
 };
 
@@ -71,6 +81,11 @@ inline
 Value::Value() noexcept :
     m_null{nullptr}
 { }
+
+inline auto
+Value::type() const noexcept -> Type {
+    return m_type;
+}
 
 }
 

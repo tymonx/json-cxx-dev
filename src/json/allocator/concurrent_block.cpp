@@ -45,13 +45,13 @@ using json::allocator::ConcurrentBlock;
 
 ConcurrentBlock::~ConcurrentBlock() noexcept { }
 
-void* ConcurrentBlock::allocate(std::size_t size) noexcept {
+void* ConcurrentBlock::allocate(Size size) noexcept {
     std::lock_guard<std::mutex> lock{m_mutex};
 
     return m_allocator.allocate(size);
 }
 
-void* ConcurrentBlock::reallocate(void* ptr, std::size_t size) noexcept {
+void* ConcurrentBlock::reallocate(void* ptr, Size size) noexcept {
     std::lock_guard<std::mutex> lock{m_mutex};
 
     return m_allocator.reallocate(ptr, size);
@@ -63,6 +63,6 @@ void ConcurrentBlock::deallocate(void* ptr) noexcept {
     m_allocator.deallocate(ptr);
 }
 
-std::size_t ConcurrentBlock::size(const void* ptr) const noexcept {
+json::Size ConcurrentBlock::size(const void* ptr) const noexcept {
     return m_allocator.size(ptr);
 }

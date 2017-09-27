@@ -53,15 +53,15 @@ public:
 
     Block() noexcept = default;
 
-    Block(std::size_t block_size) noexcept;
+    Block(Size block_size) noexcept;
 
-    virtual void* allocate(std::size_t size) noexcept override;
+    virtual void* allocate(Size size) noexcept override;
 
-    virtual void* reallocate(void* ptr, std::size_t size) noexcept override;
+    virtual void* reallocate(void* ptr, Size size) noexcept override;
 
     virtual void deallocate(void* ptr) noexcept override;
 
-    virtual std::size_t size(const void* ptr) const noexcept override;
+    virtual Size size(const void* ptr) const noexcept override;
 
     virtual ~Block() noexcept override;
 private:
@@ -69,11 +69,11 @@ private:
     Block& operator=(const Block&) = delete;
 
     void* m_header_last{nullptr};
-    std::size_t m_block_size{DEFAULT_SIZE};
+    Size m_block_size{DEFAULT_SIZE};
 };
 
 inline
-Block::Block(std::size_t block_size) noexcept :
+Block::Block(Size block_size) noexcept :
     m_block_size{block_size}
 { }
 

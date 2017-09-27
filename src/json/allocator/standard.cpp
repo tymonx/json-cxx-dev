@@ -47,11 +47,11 @@ using json::allocator::Standard;
 
 Standard::~Standard() noexcept { }
 
-void* Standard::allocate(std::size_t size) noexcept {
+void* Standard::allocate(Size size) noexcept {
     return size ? std::malloc(size) : nullptr;
 }
 
-void* Standard::reallocate(void* ptr, std::size_t size) noexcept {
+void* Standard::reallocate(void* ptr, Size size) noexcept {
     return (ptr || size) ? std::realloc(ptr, size) : nullptr;
 }
 
@@ -59,6 +59,6 @@ void Standard::deallocate(void* ptr) noexcept {
     std::free(ptr);
 }
 
-std::size_t Standard::size(const void* /* ptr */) const noexcept {
+json::Size Standard::size(const void* /* ptr */) const noexcept {
     return 0;
 }
