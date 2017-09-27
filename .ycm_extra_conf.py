@@ -43,6 +43,7 @@ flags = [
 '-Wno-global-constructors',
 '-Wno-exit-time-destructors',
 '-Wno-covered-switch-default',
+'-Wno-zero-as-null-pointer-constant',
 '-fexceptions',
 '-std=c++11',
 '-xc++',

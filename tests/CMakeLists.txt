@@ -27,22 +27,19 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-set(CXX_SOURCES
-    block.cpp
-    pool.cpp
-    standard.cpp
-    dummy.cpp
-)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-if (THREADS)
-    set(CXX_SOURCES ${CXX_SOURCES}
-        concurrent_block.cpp
-    )
-endif()
+function (add_json_test target_name)
+    add_executable(test_${target_name} test_${target_name}.cpp)
+    target_link_libraries(test_${target_name} json gtest gtest_main)
+    add_test(test_${target_name} test_${target_name})
 
-if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    set_source_files_properties(dummy.cpp PROPERTIES
-        COMPILE_FLAGS -Wno-exit-time-destructors)
-endif()
+    if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
+        set_source_files_properties(test_${target_name}.cpp
+            PROPERTIES COMPILE_FLAGS
+            "-Wno-global-constructors -Wno-zero-as-null-pointer-constant"
+        )
+    endif()
+endfunction()
 
-add_library(json-allocator OBJECT ${CXX_SOURCES})
+add_json_test(string)

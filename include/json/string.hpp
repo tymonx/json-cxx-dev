@@ -326,19 +326,6 @@ String::String(InputIt first, InputIt last, allocator_type& alloc) noexcept :
     assign(first, last);
 }
 
-inline
-String::String(std::initializer_list<value_type> ilist,
-        allocator_type& alloc) noexcept :
-    m_allocator{&alloc}
-{
-    assign(ilist);
-}
-
-inline
-String::~String() noexcept {
-    allocator().deallocate(data());
-}
-
 inline auto
 String::operator=(const String& other) noexcept -> String& {
     return assign(other);

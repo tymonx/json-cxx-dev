@@ -84,6 +84,17 @@ String& String::insert(size_type index, const_pointer s) noexcept {
     return *this;
 }
 
+String::String(std::initializer_list<value_type> ilist,
+        allocator_type& alloc) noexcept :
+    m_allocator{&alloc}
+{
+    insert(0, {ilist.begin(), ilist.size()}, copy_n);
+}
+
+String::~String() noexcept {
+    allocator().deallocate(data());
+}
+
 String::pointer String::insert(size_type index, const StringView& str,
         Function function) noexcept {
     if (index <= size()) {
@@ -91,7 +102,7 @@ String::pointer String::insert(size_type index, const StringView& str,
         resize(total_size);
         if (size() == total_size) {
             auto pos = data() + index;
-            move_n(pos, str.size(), pos + str.size());
+            move_n(pos, str.size(), pos + index);
             function(str.data(), str.size(), pos);
         }
     }
@@ -107,6 +118,7 @@ String& String::assign(String&& other) noexcept {
             m_data = other.data();
             m_size = other.size();
             other.m_data = nullptr;
+            other.m_size = 0;
         }
         else {
             assign(std::cref(other));

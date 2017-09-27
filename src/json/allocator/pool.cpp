@@ -201,5 +201,5 @@ void Pool::deallocate(void* ptr) noexcept {
 }
 
 json::Size Pool::size(const void* ptr) const noexcept {
-    return header_cast(ptr)->size;
+    return ptr ? header_cast(ptr)->size : 0;
 }

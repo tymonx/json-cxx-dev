@@ -86,6 +86,8 @@ void* Block::allocate(Size size) noexcept {
                 m_header_last = header;
                 new (&header->allocator) Pool(block + sizeof(Header),
                         block + block_size);
+
+                ptr = header->allocator.allocate(size);
             }
         }
     }
@@ -125,7 +127,7 @@ void* Block::reallocate(void* ptr, Size size) noexcept {
                                 m_header_last = header->prev;
                             }
                             header->allocator.~Pool();
-                            delete [] header;
+                            delete [] reinterpret_cast<std::uint8_t*>(header);
                         }
                     }
                 }
@@ -164,12 +166,13 @@ void Block::deallocate(void* ptr) noexcept {
                     m_header_last = header->prev;
                 }
                 header->allocator.~Pool();
-                delete [] header;
+                delete [] reinterpret_cast<std::uint8_t*>(header);
             }
         }
     }
 }
 
 json::Size Block::size(const void* ptr) const noexcept {
-    return static_cast<Header*>(m_header_last)->allocator.size(ptr);
+    return m_header_last ?
+        static_cast<Header*>(m_header_last)->allocator.size(ptr) : 0;
 }

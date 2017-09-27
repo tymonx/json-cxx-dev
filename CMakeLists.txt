@@ -50,7 +50,7 @@ else()
     option(LTO "Enable/disable link time optimization" OFF)
 endif()
 
-option(TESTS "Enable/disable tests" OFF)
+option(TESTS "Enable/disable tests" ON)
 option(EXAMPLES "Enable/disable examples" ON)
 option(WARNINGS_INTO_ERRORS "Enable/disable warnings as errors" OFF)
 
