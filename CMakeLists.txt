@@ -72,6 +72,6 @@ if (EXAMPLES)
 endif()
 
 if (TESTS)
-    enable_testing()
-    add_subdirectory(tests)
+    #enable_testing()
+    #add_subdirectory(tests)
 endif()

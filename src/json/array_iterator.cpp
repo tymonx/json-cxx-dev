@@ -46,13 +46,6 @@
 using json::ArrayIterator;
 
 template<> auto
-ArrayIterator<false>::get() noexcept -> pointer {
-    return &reinterpret_cast<ArrayItem*>(
-            ListIterator<false>::operator->())->value;
-}
-
-template<> auto
-ArrayIterator<false>::get(difference_type n) noexcept -> pointer {
-    return &reinterpret_cast<ArrayItem*>(
-            &ListIterator<false>::operator[](n))->value;
+ArrayIterator<true>::operator->() noexcept -> pointer {
+    return &reinterpret_cast<const ArrayItem*>(&*m_iterator)->value;
 }

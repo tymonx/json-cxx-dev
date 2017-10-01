@@ -34,52 +34,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/list_iterator.cpp
+ * @file json/object_iterator.cpp
  *
  * @brief Implementation
  */
 
-#include "json/list_iterator.hpp"
+#include "json/object_iterator.hpp"
 
-using json::ListIterator;
+#include "object_item.hpp"
 
-static_assert(std::is_standard_layout<json::ListItem>::value,
-        "json::ListItem is not a standard layout");
-
-template<> auto
-ListIterator<false>::operator+(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
-
-    if (n > 0) {
-        while (it && n--) {
-            it = it->next;
-        }
-    }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->prev;
-        }
-    }
-
-    return it;
-}
+using json::ObjectIterator;
 
 template<> auto
-ListIterator<false>::operator-(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
-
-    if (n > 0) {
-        while (it && n--) {
-            it = it->prev;
-        }
-    }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->next;
-        }
-    }
-
-    return it;
+ObjectIterator<true>::operator->() noexcept -> pointer {
+    return &reinterpret_cast<const ObjectItem*>(&*m_iterator)->pair;
 }

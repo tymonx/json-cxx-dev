@@ -34,14 +34,14 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/array.cpp
+ * @file json/object.cpp
  *
  * @brief Implementation
  */
 
-#include "json/array.hpp"
+#include "json/object.hpp"
 
-#include "array_item.hpp"
+#include "object_item.hpp"
 
 #include <new>
 #include <cstddef>
@@ -49,28 +49,28 @@
 #include <functional>
 #include <type_traits>
 
-using json::Array;
+using json::Object;
 
-static_assert(std::is_standard_layout<Array>::value,
-        "json::Array is not a standard layout");
+static_assert(std::is_standard_layout<Object>::value,
+        "json::Object is not a standard layout");
 
-static_assert(std::is_standard_layout<json::ArrayItem>::value,
-        "json::ArrayItem is not a standard layout");
+static_assert(std::is_standard_layout<json::ObjectItem>::value,
+        "json::ObjectItem is not a standard layout");
 
-Array::Array(size_type count, allocator_type& alloc) noexcept :
+Object::Object(size_type count, allocator_type& alloc) noexcept :
     m_allocator{&alloc}
 {
-    assign(count, Value());
+    assign(count, Pair());
 }
 
-Array::~Array() noexcept {
+Object::~Object() noexcept {
     for (auto it = m_list.begin(); it != m_list.end(); ++it) {
-        iterator{it}->~Value();
+        iterator{it}->~Pair();
         allocator().deallocate(&*it);
     }
 }
 
-Array& Array::operator=(Array&& other) noexcept {
+Object& Object::operator=(Object&& other) noexcept {
     if (this != &other) {
         if (&allocator() == &other.allocator()) {
             clear();
@@ -83,16 +83,16 @@ Array& Array::operator=(Array&& other) noexcept {
     return *this;
 }
 
-void Array::assign(size_type count, const value_type& value) noexcept {
+void Object::assign(size_type count, const value_type& pair) noexcept {
     clear();
 
     while (count--) {
-        push_back(value);
+        push_back(pair);
     }
 }
 
 template<> void
-Array::assign<Array::const_iterator>(const_iterator first,
+Object::assign<Object::const_iterator>(const_iterator first,
         const_iterator last) noexcept {
     clear();
 
@@ -101,7 +101,7 @@ Array::assign<Array::const_iterator>(const_iterator first,
     }
 }
 
-void Array::assign(std::initializer_list<value_type> ilist) noexcept {
+void Object::assign(std::initializer_list<value_type> ilist) noexcept {
     clear();
 
     for (const auto& value : ilist) {
@@ -109,34 +109,34 @@ void Array::assign(std::initializer_list<value_type> ilist) noexcept {
     }
 }
 
-void Array::push_back(const value_type& value) noexcept {
-    auto ptr = allocator().allocate<ArrayItem>();
+void Object::push_back(const value_type& pair) noexcept {
+    auto ptr = allocator().allocate<ObjectItem>();
     if (ptr) {
-        new (&ptr->value) Value(value);
+        new (&ptr->pair) Pair(pair);
         m_list.push_back(ptr->list);
     }
 }
 
-void Array::push_back(value_type&& value) noexcept {
-    auto ptr = allocator().allocate<ArrayItem>();
+void Object::push_back(value_type&& pair) noexcept {
+    auto ptr = allocator().allocate<ObjectItem>();
     if (ptr) {
-        new (&ptr->value) Value(std::move(value));
+        new (&ptr->pair) Pair(std::move(pair));
         m_list.push_back(ptr->list);
     }
 }
 
-void Array::pop_back() noexcept {
+void Object::pop_back() noexcept {
     if (!empty()) {
         auto ptr = &m_list.back();
-        iterator{ptr}->~Value();
+        iterator{ptr}->~Pair();
         m_list.pop_back();
         allocator().deallocate(ptr);
     }
 }
 
-void Array::clear() noexcept {
+void Object::clear() noexcept {
     for (auto it = m_list.begin(); it != m_list.end(); ++it) {
-        iterator{it}->~Value();
+        iterator{it}->~Pair();
         allocator().deallocate(&*it);
     }
     m_list.clear();

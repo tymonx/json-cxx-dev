@@ -48,7 +48,7 @@ using json::String;
 
 static constexpr String::value_type EMPTY_STRING[]{""};
 
-static_assert(std::is_standard_layout<String>(),
+static_assert(std::is_standard_layout<String>::value,
         "json::String is not a standard layout");
 
 String::size_type String::length(const_pointer s) noexcept {
@@ -115,6 +115,8 @@ String::pointer String::insert(size_type index, const StringView& str,
 String& String::assign(String&& other) noexcept {
     if (&other != this) {
         if (&other.allocator() == &allocator()) {
+            allocator().deallocate(m_data);
+
             m_data = other.data();
             m_size = other.size();
             other.m_data = nullptr;

@@ -34,52 +34,18 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/list_iterator.cpp
+ * @file json/pair.cpp
  *
  * @brief Implementation
  */
 
-#include "json/list_iterator.hpp"
+#include "json/pair.hpp"
 
-using json::ListIterator;
+#include <type_traits>
 
-static_assert(std::is_standard_layout<json::ListItem>::value,
-        "json::ListItem is not a standard layout");
+using json::Pair;
 
-template<> auto
-ListIterator<false>::operator+(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
+static_assert(std::is_standard_layout<Pair>::value,
+        "json::Pair is not a standard layout");
 
-    if (n > 0) {
-        while (it && n--) {
-            it = it->next;
-        }
-    }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->prev;
-        }
-    }
-
-    return it;
-}
-
-template<> auto
-ListIterator<false>::operator-(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
-
-    if (n > 0) {
-        while (it && n--) {
-            it = it->prev;
-        }
-    }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->next;
-        }
-    }
-
-    return it;
-}
+Pair::~Pair() noexcept { }

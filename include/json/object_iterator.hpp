@@ -34,13 +34,13 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/array_iterator.hpp
+ * @file json/object_iterator.hpp
  *
- * @brief JSON array iterator interface
+ * @brief JSON object iterator interface
  */
 
-#ifndef JSON_ARRAY_ITERATOR_HPP
-#define JSON_ARRAY_ITERATOR_HPP
+#ifndef JSON_OBJECT_ITERATOR_HPP
+#define JSON_OBJECT_ITERATOR_HPP
 
 #include "list_iterator.hpp"
 
@@ -48,13 +48,13 @@
 
 namespace json {
 
-class Value;
+class Pair;
 
 template<bool is_const>
-class ArrayIterator {
+class ObjectIterator {
 public:
     using value_type = typename std::conditional<is_const,
-          const Value, Value>::type;
+          const Pair, Pair>::type;
 
     using pointer = value_type*;
     using reference = value_type&;
@@ -64,36 +64,36 @@ public:
     template<bool T>
     using enable_const = typename std::enable_if<T, int>::type;
 
-    ArrayIterator() noexcept = default;
+    ObjectIterator() noexcept = default;
 
-    ArrayIterator(const ListIterator<is_const>& other) noexcept;
+    ObjectIterator(const ListIterator<is_const>& other) noexcept;
 
-    ArrayIterator(const ArrayIterator& other) noexcept = default;
+    ObjectIterator(const ObjectIterator& other) noexcept = default;
 
     template<bool T = is_const, typename = enable_const<T>>
-    ArrayIterator(const ArrayIterator<false>& other) noexcept;
+    ObjectIterator(const ObjectIterator<false>& other) noexcept;
 
-    ArrayIterator(ArrayIterator&& other) noexcept = default;
+    ObjectIterator(ObjectIterator&& other) noexcept = default;
 
-    ArrayIterator& operator=(const ArrayIterator& other) noexcept = default;
+    ObjectIterator& operator=(const ObjectIterator& other) noexcept = default;
 
-    ArrayIterator& operator=(ArrayIterator&& other) noexcept = default;
+    ObjectIterator& operator=(ObjectIterator&& other) noexcept = default;
 
-    ArrayIterator& operator++() noexcept;
+    ObjectIterator& operator++() noexcept;
 
-    ArrayIterator operator++(int) noexcept;
+    ObjectIterator operator++(int) noexcept;
 
-    ArrayIterator& operator--() noexcept;
+    ObjectIterator& operator--() noexcept;
 
-    ArrayIterator operator--(int) noexcept;
+    ObjectIterator operator--(int) noexcept;
 
-    ArrayIterator operator+(difference_type n) const noexcept;
+    ObjectIterator operator+(difference_type n) const noexcept;
 
-    ArrayIterator& operator+=(difference_type n) noexcept;
+    ObjectIterator& operator+=(difference_type n) noexcept;
 
-    ArrayIterator operator-(difference_type n) const noexcept;
+    ObjectIterator operator-(difference_type n) const noexcept;
 
-    ArrayIterator& operator-=(difference_type n) noexcept;
+    ObjectIterator& operator-=(difference_type n) noexcept;
 
     reference operator[](difference_type n) noexcept;
 
@@ -110,127 +110,127 @@ public:
     operator bool() const noexcept;
 
     template<bool other_is_const>
-    bool operator==(const ArrayIterator<other_is_const>& other) const noexcept;
+    bool operator==(const ObjectIterator<other_is_const>& other) const noexcept;
 
     template<bool other_is_const>
-    bool operator!=(const ArrayIterator<other_is_const>& other) const noexcept;
+    bool operator!=(const ObjectIterator<other_is_const>& other) const noexcept;
 private:
-    friend class ArrayIterator<true>;
-    friend class ArrayIterator<false>;
+    friend class ObjectIterator<true>;
+    friend class ObjectIterator<false>;
 
     ListIterator<is_const> m_iterator{};
 };
 
 template<bool is_const> inline
-ArrayIterator<is_const>::ArrayIterator(
+ObjectIterator<is_const>::ObjectIterator(
         const ListIterator<is_const>& other) noexcept :
     m_iterator{other}
 { }
 
 template<bool is_const> template<bool T, typename> inline
-ArrayIterator<is_const>::ArrayIterator(
-        const ArrayIterator<false>& other) noexcept :
+ObjectIterator<is_const>::ObjectIterator(
+        const ObjectIterator<false>& other) noexcept :
     m_iterator{other.m_iterator}
 { }
 
 template<bool is_const> inline auto
-ArrayIterator<is_const>::operator++() noexcept -> ArrayIterator& {
+ObjectIterator<is_const>::operator++() noexcept -> ObjectIterator& {
     ++m_iterator;
     return *this;
 }
 
 template<bool is_const> inline auto
-ArrayIterator<is_const>::operator++(int) noexcept -> ArrayIterator {
+ObjectIterator<is_const>::operator++(int) noexcept -> ObjectIterator {
     return m_iterator++;
 }
 
 template<bool is_const> inline auto
-ArrayIterator<is_const>::operator--() noexcept -> ArrayIterator& {
+ObjectIterator<is_const>::operator--() noexcept -> ObjectIterator& {
     --m_iterator;
     return *this;
 }
 
 template<bool is_const> inline auto
-ArrayIterator<is_const>::operator--(int) noexcept -> ArrayIterator {
+ObjectIterator<is_const>::operator--(int) noexcept -> ObjectIterator {
     return m_iterator--;
 }
 
 template<bool is_const> inline auto
-ArrayIterator<is_const>::operator+(difference_type n) const noexcept ->
-        ArrayIterator {
+ObjectIterator<is_const>::operator+(difference_type n) const noexcept ->
+        ObjectIterator {
     return (m_iterator + n);
 }
 
 template<bool is_const> inline auto
-ArrayIterator<is_const>::operator+=(difference_type n) noexcept ->
-        ArrayIterator& {
+ObjectIterator<is_const>::operator+=(difference_type n) noexcept ->
+        ObjectIterator& {
     return *this = (m_iterator + n);
 }
 
 template<bool is_const> inline auto
-ArrayIterator<is_const>::operator-(difference_type n) const noexcept ->
-        ArrayIterator {
+ObjectIterator<is_const>::operator-(difference_type n) const noexcept ->
+        ObjectIterator {
     return *this = (m_iterator - n);
 }
 
 template<bool is_const> inline auto
-ArrayIterator<is_const>::operator[](difference_type n) noexcept -> reference {
+ObjectIterator<is_const>::operator[](difference_type n) noexcept -> reference {
     return *(*this + n);
 }
 
 template<bool is_const> inline auto
-ArrayIterator<is_const>::operator[](
+ObjectIterator<is_const>::operator[](
         difference_type n) const noexcept -> reference {
     return *(*this + n);
 }
 
 template<bool is_const> inline auto
-ArrayIterator<is_const>::operator*() noexcept -> reference {
+ObjectIterator<is_const>::operator*() noexcept -> reference {
     return *operator->();
 }
 
 template<bool is_const> inline auto
-ArrayIterator<is_const>::operator*() const noexcept -> reference {
+ObjectIterator<is_const>::operator*() const noexcept -> reference {
     return *operator->();
 }
 
 template<> auto
-ArrayIterator<true>::operator->() noexcept -> pointer;
+ObjectIterator<true>::operator->() noexcept -> pointer;
 
 template<> inline auto
-ArrayIterator<false>::operator->() noexcept -> pointer {
-    return const_cast<pointer>(ArrayIterator<true>{*this}.operator->());
+ObjectIterator<false>::operator->() noexcept -> pointer {
+    return const_cast<pointer>(ObjectIterator<true>{*this}.operator->());
 }
 
 template<> inline auto
-ArrayIterator<true>::operator->() const noexcept -> pointer {
-    return const_cast<ArrayIterator<true>*>(this)->operator->();
+ObjectIterator<true>::operator->() const noexcept -> pointer {
+    return const_cast<ObjectIterator<true>*>(this)->operator->();
 }
 
 template<> inline auto
-ArrayIterator<false>::operator->() const noexcept -> pointer {
-    return const_cast<pointer>(ArrayIterator<true>{*this}.operator->());
+ObjectIterator<false>::operator->() const noexcept -> pointer {
+    return const_cast<pointer>(ObjectIterator<true>{*this}.operator->());
 }
 
 template<bool is_const> inline
-ArrayIterator<is_const>::operator bool() const noexcept {
+ObjectIterator<is_const>::operator bool() const noexcept {
     return bool(m_iterator);
 }
 
 template<bool is_const>
 template<bool other_is_const> inline bool
-ArrayIterator<is_const>::operator==(
-        const ArrayIterator<other_is_const>& other) const noexcept {
+ObjectIterator<is_const>::operator==(
+        const ObjectIterator<other_is_const>& other) const noexcept {
     return m_iterator == other.m_iterator;
 }
 
 template<bool is_const>
 template<bool other_is_const> inline bool
-ArrayIterator<is_const>::operator!=(
-        const ArrayIterator<other_is_const>& other) const noexcept {
+ObjectIterator<is_const>::operator!=(
+        const ObjectIterator<other_is_const>& other) const noexcept {
     return m_iterator != other.m_iterator;
 }
 
 }
 
-#endif /* JSON_ARRAY_ITERATOR_HPP */
+#endif /* JSON_OBJECT_ITERATOR_HPP */

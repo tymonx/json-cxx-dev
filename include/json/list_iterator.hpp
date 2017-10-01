@@ -109,6 +109,12 @@ public:
     pointer operator->() const noexcept;
 
     operator bool() const noexcept;
+
+    template<bool other_is_const>
+    bool operator==(const ListIterator<other_is_const>& other) const noexcept;
+
+    template<bool other_is_const>
+    bool operator!=(const ListIterator<other_is_const>& other) const noexcept;
 private:
     pointer m_item{nullptr};
 };
@@ -164,7 +170,7 @@ ListIterator<true>::operator+(difference_type n) const noexcept ->
 template<> inline auto
 ListIterator<false>::operator+=(difference_type n) noexcept ->
         ListIterator& {
-     return *this = (ListIterator<false>{const_cast<std::remove_const<
+    return *this = (ListIterator<false>{const_cast<std::remove_const<
         value_type>::type*>(m_item)} + n);
 }
 
@@ -236,16 +242,18 @@ ListIterator<is_const>::operator bool() const noexcept {
     return (nullptr != m_item);
 }
 
-template<bool lhs_is_const, bool rhs_is_const> static inline auto
-operator==(const ListIterator<lhs_is_const>& lhs,
-        const ListIterator<rhs_is_const>& rhs) noexcept -> bool {
-    return &(*lhs) == &(*rhs);
+template<bool is_const>
+template<bool other_is_const> inline auto
+ListIterator<is_const>::operator==(
+        const ListIterator<other_is_const>& other) const noexcept -> bool {
+    return m_item == &(*other);
 }
 
-template<bool lhs_is_const, bool rhs_is_const> static inline auto
-operator!=(const ListIterator<lhs_is_const>& lhs,
-        const ListIterator<rhs_is_const>& rhs) noexcept -> bool {
-    return &(*lhs) != &(*rhs);
+template<bool is_const>
+template<bool other_is_const> inline auto
+ListIterator<is_const>::operator!=(
+        const ListIterator<other_is_const>& other) const noexcept -> bool {
+    return m_item != &(*other);
 }
 
 }

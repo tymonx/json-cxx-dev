@@ -34,74 +34,74 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/array.hpp
+ * @file json/object.hpp
  *
- * @brief JSON array interface
+ * @brief JSON object interface
  */
 
-#ifndef JSON_ARRAY_HPP
-#define JSON_ARRAY_HPP
+#ifndef JSON_OBJECT_HPP
+#define JSON_OBJECT_HPP
 
 #include "list.hpp"
 #include "types.hpp"
 #include "allocator.hpp"
-#include "array_iterator.hpp"
+#include "object_iterator.hpp"
 
 #include <initializer_list>
 
 namespace json {
 
-class Array {
+class Object {
 public:
-    using value_type = Value;
+    using value_type = Pair;
     using size_type = Size;
     using reference = value_type&;
     using allocator_type = Allocator;
     using const_reference = const value_type&;
     using pointer = value_type*;
     using const_pointer = const value_type*;
-    using iterator = ArrayIterator<false>;
-    using const_iterator = ArrayIterator<true>;
+    using iterator = ObjectIterator<false>;
+    using const_iterator = ObjectIterator<true>;
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-    Array() noexcept = default;
+    Object() noexcept = default;
 
-    Array(allocator_type& alloc) noexcept;
+    Object(allocator_type& alloc) noexcept;
 
-    Array(const Array& other) noexcept;
+    Object(const Object& other) noexcept;
 
-    Array(const Array& other, allocator_type& alloc) noexcept;
+    Object(const Object& other, allocator_type& alloc) noexcept;
 
-    Array(Array&& other) noexcept = default;
+    Object(Object&& other) noexcept = default;
 
-    Array(Array&& other, allocator_type& alloc) noexcept;
+    Object(Object&& other, allocator_type& alloc) noexcept;
 
-    Array(std::initializer_list<value_type> ilist,
+    Object(std::initializer_list<value_type> ilist,
             allocator_type& alloc = Allocator::get_instance()) noexcept;
 
-    Array(size_type count, const value_type& value,
+    Object(size_type count, const value_type& value,
             allocator_type& alloc = Allocator::get_instance()) noexcept;
 
-    Array(size_type count,
+    Object(size_type count,
             allocator_type& alloc = Allocator::get_instance()) noexcept;
 
-    Array& operator=(const Array& other) noexcept;
+    Object& operator=(const Object& other) noexcept;
 
-    Array& operator=(Array&& other) noexcept;
+    Object& operator=(Object&& other) noexcept;
 
-    Array& operator=(std::initializer_list<value_type> ilist) noexcept;
+    Object& operator=(std::initializer_list<value_type> ilist) noexcept;
 
-    void assign(size_type count, const value_type& value) noexcept;
+    void assign(size_type count, const value_type& pair) noexcept;
 
     template<typename InputIt>
     void assign(InputIt first, InputIt last) noexcept;
 
     void assign(std::initializer_list<value_type> ilist) noexcept;
 
-    void push_back(const value_type& value) noexcept;
+    void push_back(const value_type& pair) noexcept;
 
-    void push_back(value_type&& value) noexcept;
+    void push_back(value_type&& pair) noexcept;
 
     void pop_back() noexcept;
 
@@ -145,52 +145,52 @@ public:
 
     const_reverse_iterator crend() const noexcept;
 
-    ~Array() noexcept;
+    ~Object() noexcept;
 private:
     Allocator* m_allocator{&Allocator::get_instance()};
     List m_list{};
 };
 
 inline
-Array::Array(size_type count, const value_type& value,
+Object::Object(size_type count, const value_type& pair,
         allocator_type& alloc) noexcept :
     m_allocator{&alloc}
 {
     while (count--) {
-        push_back(value);
+        push_back(pair);
     }
 }
 
 template<> void
-Array::assign<Array::const_iterator>(const_iterator first,
+Object::assign<Object::const_iterator>(const_iterator first,
         const_iterator last) noexcept;
 
 inline
-Array::Array(allocator_type& alloc) noexcept :
+Object::Object(allocator_type& alloc) noexcept :
     m_allocator{&alloc}
 { }
 
 inline
-Array::Array(const Array& other) noexcept :
-    Array{other, const_cast<Array&>(other).allocator()}
+Object::Object(const Object& other) noexcept :
+    Object{other, const_cast<Object&>(other).allocator()}
 { }
 
 inline
-Array::Array(Array&& other, allocator_type& alloc) noexcept :
+Object::Object(Object&& other, allocator_type& alloc) noexcept :
     m_allocator{&alloc}
 {
     *this = std::move(other);
 }
 
 inline
-Array::Array(const Array& other, allocator_type& alloc) noexcept :
+Object::Object(const Object& other, allocator_type& alloc) noexcept :
     m_allocator{&alloc}
 {
     assign(other.cbegin(), other.cend());
 }
 
 inline
-Array::Array(std::initializer_list<value_type> ilist,
+Object::Object(std::initializer_list<value_type> ilist,
         allocator_type& alloc) noexcept :
     m_allocator{&alloc}
 {
@@ -198,20 +198,20 @@ Array::Array(std::initializer_list<value_type> ilist,
 }
 
 inline auto
-Array::Array::operator=(const Array& other) noexcept -> Array& {
+Object::Object::operator=(const Object& other) noexcept -> Object& {
     assign(other.cbegin(), other.cend());
     return *this;
 }
 
 inline auto
-Array::Array::operator=(
-        std::initializer_list<value_type> ilist) noexcept -> Array& {
+Object::Object::operator=(
+        std::initializer_list<value_type> ilist) noexcept -> Object& {
     assign(ilist);
     return *this;
 }
 
 template<typename InputIt> void
-Array::assign(InputIt first, InputIt last) noexcept {
+Object::assign(InputIt first, InputIt last) noexcept {
     clear();
 
     while (first != last) {
@@ -220,100 +220,100 @@ Array::assign(InputIt first, InputIt last) noexcept {
 }
 
 inline auto
-Array::back() noexcept -> reference {
+Object::back() noexcept -> reference {
     return *iterator{&m_list.back()};
 }
 
 inline auto
-Array::back() const noexcept -> const_reference {
+Object::back() const noexcept -> const_reference {
     return *const_iterator{&m_list.back()};
 }
 
 inline auto
-Array::front() noexcept -> reference {
+Object::front() noexcept -> reference {
     return *iterator{&m_list.front()};
 }
 
 inline auto
-Array::front() const noexcept -> const_reference {
+Object::front() const noexcept -> const_reference {
     return *const_iterator{&m_list.front()};
 }
 
 inline auto
-Array::allocator() noexcept -> Allocator& {
+Object::allocator() noexcept -> Allocator& {
     return *m_allocator;
 }
 
 inline auto
-Array::size() const noexcept -> size_type {
+Object::size() const noexcept -> size_type {
     return m_list.size();
 }
 
 inline auto
-Array::empty() const noexcept -> bool {
+Object::empty() const noexcept -> bool {
     return m_list.empty();
 }
 
 inline auto
-Array::begin() noexcept -> iterator {
+Object::begin() noexcept -> iterator {
     return m_list.begin();
 }
 
 inline auto
-Array::begin() const noexcept -> const_iterator {
+Object::begin() const noexcept -> const_iterator {
     return m_list.begin();
 }
 
 inline auto
-Array::cbegin() const noexcept -> const_iterator {
+Object::cbegin() const noexcept -> const_iterator {
     return m_list.cbegin();
 }
 
 inline auto
-Array::end() noexcept -> iterator {
+Object::end() noexcept -> iterator {
     return m_list.end();
 }
 
 inline auto
-Array::end() const noexcept -> const_iterator {
+Object::end() const noexcept -> const_iterator {
     return m_list.end();
 }
 
 inline auto
-Array::cend() const noexcept -> const_iterator {
+Object::cend() const noexcept -> const_iterator {
     return m_list.cend();
 }
 
 inline auto
-Array::rbegin() noexcept -> reverse_iterator {
+Object::rbegin() noexcept -> reverse_iterator {
     return m_list.rbegin();
 }
 
 inline auto
-Array::rbegin() const noexcept -> const_reverse_iterator {
+Object::rbegin() const noexcept -> const_reverse_iterator {
     return m_list.rbegin();
 }
 
 inline auto
-Array::crbegin() const noexcept -> const_reverse_iterator {
+Object::crbegin() const noexcept -> const_reverse_iterator {
     return m_list.crbegin();
 }
 
 inline auto
-Array::rend() noexcept -> reverse_iterator {
+Object::rend() noexcept -> reverse_iterator {
     return m_list.rend();
 }
 
 inline auto
-Array::rend() const noexcept -> const_reverse_iterator {
+Object::rend() const noexcept -> const_reverse_iterator {
     return m_list.rend();
 }
 
 inline auto
-Array::crend() const noexcept -> const_reverse_iterator {
+Object::crend() const noexcept -> const_reverse_iterator {
     return m_list.crend();
 }
 
 }
 
-#endif /* JSON_ARRAY_HPP */
+#endif /* JSON_OBJECT_HPP */

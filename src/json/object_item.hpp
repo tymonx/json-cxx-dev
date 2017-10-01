@@ -9,11 +9,11 @@
  *
  * @copright
  * * Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
+ *   span of conditions and the following disclaimer.
  *
  * @copright
  * * Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
+ *   this span of conditions and the following disclaimer in the documentation
  *   and/or other materials provided with the distribution.
  *
  * @copright
@@ -34,52 +34,29 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  *
- * @file json/list_iterator.cpp
+ * @file json/object_item.hpp
  *
- * @brief Implementation
+ * @brief JSON object item interface
  */
 
-#include "json/list_iterator.hpp"
+#ifndef JSON_OBJECT_ITEM_HPP
+#define JSON_OBJECT_ITEM_HPP
 
-using json::ListIterator;
+#include "json/pair.hpp"
+#include "json/list_item.hpp"
 
-static_assert(std::is_standard_layout<json::ListItem>::value,
-        "json::ListItem is not a standard layout");
+namespace json {
 
-template<> auto
-ListIterator<false>::operator+(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
+class ObjectItem {
+    friend class Object;
 
-    if (n > 0) {
-        while (it && n--) {
-            it = it->next;
-        }
-    }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->prev;
-        }
-    }
+    template<bool is_const>
+    friend class ObjectIterator;
 
-    return it;
+    ListItem list{};
+    Pair pair{};
+};
+
 }
 
-template<> auto
-ListIterator<false>::operator-(difference_type n) const noexcept
-        -> ListIterator {
-    ListIterator<false> it{m_item};
-
-    if (n > 0) {
-        while (it && n--) {
-            it = it->prev;
-        }
-    }
-    else if (n < 0) {
-        while (it && n++) {
-            it = it->next;
-        }
-    }
-
-    return it;
-}
+#endif /* JSON_OBJECT_ITEM_HPP */

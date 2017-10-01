@@ -45,7 +45,7 @@
 
 using json::StringView;
 
-static_assert(std::is_standard_layout<StringView>(),
+static_assert(std::is_standard_layout<StringView>::value,
         "json::StringView is not a standard layout");
 
 StringView StringView::subspan(size_type pos, size_type count) noexcept {

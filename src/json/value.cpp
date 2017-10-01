@@ -46,45 +46,134 @@
 
 using json::Value;
 
-static_assert(std::is_standard_layout<Value>(),
+static_assert(std::is_standard_layout<Value>::value,
         "json::Value is not a standard layout");
 
-Value::Value(const Value& other) noexcept {
+Value::Value(Type value) noexcept :
+    m_type{value}
+{
     switch (type()) {
-    case NIL:
-        m_null = nullptr;
-        break;
     case BOOLEAN:
-        m_boolean = other.m_boolean;
+        m_boolean = false;
         break;
     case STRING:
         new (&m_string) String();
         break;
     case NUMBER:
+        new (&m_number) Number();
         break;
     case ARRAY:
+        new (&m_array) Array();
         break;
     case OBJECT:
+        new (&m_object) Object();
         break;
+    case NIL:
     default:
         break;
     }
 }
 
-Value::~Value() noexcept {
+void Value::assign(const Value& other) noexcept {
+    destroy();
+    m_type = other.type();
+
+    switch (type()) {
+    case BOOLEAN:
+        m_boolean = other.m_boolean;
+        break;
+    case STRING:
+        new (&m_string) String(other.m_string);
+        break;
+    case NUMBER:
+        new (&m_number) Number(other.m_number);
+        break;
+    case ARRAY:
+        new (&m_array) Array(other.m_array);
+        break;
+    case OBJECT:
+        new (&m_object) Object(other.m_object);
+        break;
+    case NIL:
+    default:
+        break;
+    }
+}
+
+void Value::assign(Value&& other) noexcept {
+    if (this != &other) {
+        if (type() != other.type()) {
+            destroy();
+            m_type = other.type();
+        }
+
+        switch (type()) {
+        case BOOLEAN:
+            m_boolean = other.m_boolean;
+            break;
+        case STRING:
+            new (&m_string) String(std::move(other.m_string));
+            break;
+        case NUMBER:
+            new (&m_number) Number(std::move(other.m_number));
+            break;
+        case ARRAY:
+            new (&m_array) Array(std::move(other.m_array));
+            break;
+        case OBJECT:
+            new (&m_object) Object(std::move(other.m_object));
+            break;
+        case NIL:
+        default:
+            break;
+        }
+    }
+}
+
+void Value::destroy() noexcept {
     switch (type()) {
     case STRING:
         m_string.~String();
         break;
-    case NUMBER:
-        break;
     case ARRAY:
+        m_array.~Array();
         break;
     case OBJECT:
+        m_object.~Object();
+        break;
+    case NUMBER:
+        m_number.~Number();
         break;
     case NIL:
     case BOOLEAN:
     default:
         break;
     }
+}
+
+Value::operator Bool() const noexcept {
+    bool value = false;
+
+    switch (type()) {
+    case BOOLEAN:
+        value = m_boolean;
+        break;
+    case STRING:
+        value = !m_string.empty();
+        break;
+    case NUMBER:
+        value = bool(m_number);
+        break;
+    case ARRAY:
+        value = !m_array.empty();
+        break;
+    case OBJECT:
+        value = !m_object.empty();
+        break;
+    case NIL:
+    default:
+        break;
+    }
+
+    return value;
 }
