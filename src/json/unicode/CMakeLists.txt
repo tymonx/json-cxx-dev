@@ -27,50 +27,8 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-add_subdirectory(allocator)
-add_subdirectory(unicode)
-
-add_library(json-core OBJECT
-    array.cpp
-    array_iterator.cpp
-    object.cpp
-    object_iterator.cpp
-    pair.cpp
-    value.cpp
-    list.cpp
-    number.cpp
-    list_iterator.cpp
-    string.cpp
-    parser.cpp
-    string_view.cpp
-    allocator.cpp
+set(CXX_SOURCES
+    decoder.cpp
 )
 
-if (NOT JSON_ALLOCATOR_TYPE)
-    if (THREADS)
-        set(JSON_ALLOCATOR_TYPE JSON_ALLOCATOR_CONCURRENT_BLOCK)
-    elseif (CMAKE_TOOLCHAIN_FILE AND CMAKE_SYSTEM_NAME MATCHES Generic)
-        set(JSON_ALLOCATOR_TYPE JSON_ALLOCATOR_POOL)
-    else()
-        set(JSON_ALLOCATOR_TYPE JSON_ALLOCATOR_BLOCK)
-    endif()
-endif()
-
-set_source_files_properties(allocator.cpp PROPERTIES
-    COMPILE_DEFINITIONS ${JSON_ALLOCATOR_TYPE})
-
-add_library(json STATIC
-    $<TARGET_OBJECTS:json-core>
-    $<TARGET_OBJECTS:json-unicode>
-    $<TARGET_OBJECTS:json-allocator>
-)
-
-set_target_properties(json PROPERTIES
-    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
-)
-
-if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
-    set_source_files_properties(allocator.cpp PROPERTIES
-        COMPILE_FLAGS -Wno-exit-time-destructors)
-endif()
+add_library(json-unicode OBJECT ${CXX_SOURCES})
