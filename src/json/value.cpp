@@ -1,38 +1,21 @@
 /*!
- * @copright
- * Copyright (c) 2017, Tymoteusz Blazejczyk
- * All rights reserved.
+ * @copyright
+ * Copyright 2017 Tymoteusz Blazejczyk
  *
- * @copright
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * @copyright
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * @copright
- * * Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
+ * @copyright
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * @copright
- * * Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
- *   and/or other materials provided with the distribution.
- *
- * @copright
- * * Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from
- *   this software without specific prior written permission.
- *
- * @copright
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * @copyright
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  * @file json/value.cpp
  *
@@ -40,6 +23,7 @@
  */
 
 #include "json/value.hpp"
+#include "json/pair.hpp"
 
 #include <new>
 #include <type_traits>
@@ -49,7 +33,7 @@ using json::Value;
 static_assert(std::is_standard_layout<Value>::value,
         "json::Value is not a standard layout");
 
-Value::Value(Type value) noexcept :
+Value::Value(Type value, allocator_type& alloc) noexcept :
     m_type{value}
 {
     switch (type()) {
@@ -57,16 +41,16 @@ Value::Value(Type value) noexcept :
         m_boolean = false;
         break;
     case STRING:
-        new (&m_string) String();
+        new (&m_string) String{alloc};
         break;
     case NUMBER:
-        new (&m_number) Number();
+        new (&m_number) Number{};
         break;
     case ARRAY:
-        new (&m_array) Array();
+        new (&m_array) Array{alloc};
         break;
     case OBJECT:
-        new (&m_object) Object();
+        new (&m_object) Object{alloc};
         break;
     case NIL:
     default:
@@ -74,9 +58,32 @@ Value::Value(Type value) noexcept :
     }
 }
 
+void Value::destroy() noexcept {
+    switch (type()) {
+    case STRING:
+        m_string.~String();
+        break;
+    case ARRAY:
+        m_array.~Array();
+        break;
+    case OBJECT:
+        m_object.~Object();
+        break;
+    case NUMBER:
+        m_number.~Number();
+        break;
+    case NIL:
+    case BOOLEAN:
+    default:
+        break;
+    }
+}
+
 void Value::assign(const Value& other) noexcept {
     destroy();
+
     m_type = other.type();
+    m_parent = other.parent();
 
     switch (type()) {
     case BOOLEAN:
@@ -102,6 +109,8 @@ void Value::assign(const Value& other) noexcept {
 
 void Value::assign(Value&& other) noexcept {
     if (this != &other) {
+        m_parent = other.parent();
+
         if (type() != other.type()) {
             destroy();
             m_type = other.type();
@@ -127,28 +136,19 @@ void Value::assign(Value&& other) noexcept {
         default:
             break;
         }
+
+        other.m_type = NIL;
     }
 }
 
-void Value::destroy() noexcept {
-    switch (type()) {
-    case STRING:
-        m_string.~String();
-        break;
-    case ARRAY:
-        m_array.~Array();
-        break;
-    case OBJECT:
-        m_object.~Object();
-        break;
-    case NUMBER:
-        m_number.~Number();
-        break;
-    case NIL:
-    case BOOLEAN:
-    default:
-        break;
+Value::pointer Value::root() const noexcept {
+    auto it = m_parent;
+
+    while (it) {
+        it = it->parent();
     }
+
+    return it;
 }
 
 Value::operator Bool() const noexcept {
@@ -176,4 +176,85 @@ Value::operator Bool() const noexcept {
     }
 
     return value;
+}
+
+void Value::push_back(const value_type& value) noexcept {
+    if (is_array()) {
+        m_array.emplace_back(value, this);
+    }
+    else if (is_object()) {
+        m_object.emplace_back(value, this);
+    }
+    else {
+        Array array;
+
+        if (!is_null()) {
+            array.emplace_back(std::move(*this), this);
+        }
+
+        array.emplace_back(value, this);
+
+        if (is_null()) {
+            m_type = ARRAY;
+            new (&m_array) Array(std::move(array));
+        }
+    }
+}
+
+void Value::push_back(value_type&& value) noexcept {
+    if (is_array()) {
+        m_array.emplace_back(std::move(value), this);
+    }
+    else if (is_object()) {
+        m_object.emplace_back(std::move(value), this);
+    }
+    else {
+        Array array;
+
+        if (!is_null()) {
+            array.emplace_back(std::move(*this), this);
+        }
+
+        array.emplace_back(std::move(value), this);
+
+        if (is_null()) {
+            m_type = ARRAY;
+            new (&m_array) Array(std::move(array));
+        }
+    }
+}
+
+void Value::pop_back() noexcept {
+    if (is_array()) {
+        m_array.pop_back();
+    }
+    else if (is_object()) {
+        m_object.pop_back();
+    }
+}
+
+Value::iterator Value::begin() noexcept {
+    iterator it;
+
+    if (is_array()) {
+        it = m_array.begin();
+    }
+    else if (is_object()) {
+        it = m_object.begin();
+    }
+
+    return it;
+}
+
+Value::reverse_iterator Value::rbegin() noexcept {
+    reverse_iterator it;
+
+    if (is_array()) {
+        it = m_array.rbegin();
+    }
+    else if (is_object()) {
+        it = m_object.rbegin();
+    }
+
+    return it;
 }

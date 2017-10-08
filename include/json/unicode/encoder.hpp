@@ -22,8 +22,8 @@
  * @brief JSON Unicode decoder interface
  */
 
-#ifndef JSON_UNICODE_DECODER_HPP
-#define JSON_UNICODE_DECODER_HPP
+#ifndef JSON_UNICODE_ENCODER_HPP
+#define JSON_UNICODE_ENCODER_HPP
 
 #include "error.hpp"
 #include "encoding.hpp"
@@ -33,72 +33,60 @@
 namespace json {
 namespace unicode {
 
-class Decoder {
+class Encoder {
 public:
     class Observer {
     public:
-        virtual void unicode_decoded(char32_t ch) noexcept = 0;
+        virtual void unicode_encoded(char32_t ch) noexcept = 0;
 
-        virtual void unicode_decoded(char32_t ch, Error error) noexcept = 0;
+        virtual void unicode_encoded(char32_t ch, Error error) noexcept = 0;
 
         virtual ~Observer() noexcept;
     };
 
-    Decoder(Observer& observer) noexcept;
+    Encoder(Observer& observer) noexcept;
 
     void encoding(Encoding encoding_type) noexcept;
 
-    void decode(char ch) noexcept;
+    void encode(char ch) noexcept;
 
-    void decode(char16_t ch) noexcept;
+    void encode(char16_t ch) noexcept;
 
-    void decode(char32_t ch) noexcept;
+    void encode(char32_t ch) noexcept;
 private:
-    using StateHandler = void (Decoder::*)(char32_t ch);
+    using StateHandler = void (Encoder::*)(char32_t ch);
 
-    void decode_utf8_code1(char32_t ch) noexcept;
+    void encode_utf8_code(char32_t ch) noexcept;
 
-    void decode_utf8_code2(char32_t ch) noexcept;
+    void encode_utf16_code(char32_t ch) noexcept;
 
-    void decode_utf8_code3(char32_t ch) noexcept;
-
-    void decode_utf8_code4(char32_t ch) noexcept;
-
-    void decode_utf16_code1(char32_t ch) noexcept;
-
-    void decode_utf16_code2(char32_t ch) noexcept;
-
-    void decode_utf32_code(char32_t ch) noexcept;
-
-    void decoded(char32_t ch) noexcept;
+    void encode_utf32_code(char32_t ch) noexcept;
 
     std::reference_wrapper<Observer> m_observer;
-    StateHandler m_state{&Decoder::decode_utf8_code1};
-    char32_t m_unicode{};
+    StateHandler m_state{&Encoder::encode_utf8_code};
 };
 
 inline
-Decoder::Decoder(Observer& observer) noexcept :
-    m_observer{observer},
-    m_state{&Decoder::decode_utf8_code1}
+Encoder::Encoder(Observer& observer) noexcept :
+    m_observer{observer}
 { }
 
 inline void
-Decoder::decode(char ch) noexcept {
+Encoder::encode(char ch) noexcept {
     (*this.*m_state)(char32_t(ch));
 }
 
 inline void
-Decoder::decode(char16_t ch) noexcept {
+Encoder::encode(char16_t ch) noexcept {
     (*this.*m_state)(char32_t(ch));
 }
 
 inline void
-Decoder::decode(char32_t ch) noexcept {
+Encoder::encode(char32_t ch) noexcept {
     (*this.*m_state)(ch);
 }
 
 }
 }
 
-#endif /* JSON_UNICODE_DECODER_HPP */
+#endif /* JSON_UNICODE_ENCODER_HPP */

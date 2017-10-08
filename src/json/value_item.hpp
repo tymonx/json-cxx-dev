@@ -17,20 +17,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file json/string_view.cpp
+ * @file json/value_item.hpp
  *
- * @brief Implementation
+ * @brief JSON value item interface
  */
 
-#include "json/string_view.hpp"
+#ifndef JSON_VALUE_ITEM_HPP
+#define JSON_VALUE_ITEM_HPP
 
-#include <type_traits>
+#include "json/pair.hpp"
+#include "json/value.hpp"
+#include "json/list_item.hpp"
 
-using json::StringView;
+namespace json {
 
-static_assert(std::is_standard_layout<StringView>::value,
-        "json::StringView is not a standard layout");
+struct ValueItem {
+    ListItem list{};
+    union {
+        Value value{};
+        Pair pair;
+    };
+};
 
-StringView StringView::subspan(size_type pos, size_type count) noexcept {
-    return Span::subspan(pos, count);
 }
+
+#endif /* JSON_VALUE_ITEM_HPP */

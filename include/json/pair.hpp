@@ -1,38 +1,21 @@
 /*!
- * @copright
- * Copyright (c) 2017, Tymoteusz Blazejczyk
- * All rights reserved.
+ * @copyright
+ * Copyright 2017 Tymoteusz Blazejczyk
  *
- * @copright
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
+ * @copyright
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * @copright
- * * Redistributions of source code must retain the above copyright notice, this
- *   span of conditions and the following disclaimer.
+ * @copyright
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
- * @copright
- * * Redistributions in binary form must reproduce the above copyright notice,
- *   this span of conditions and the following disclaimer in the documentation
- *   and/or other materials provided with the distribution.
- *
- * @copright
- * * Neither the name of the copyright holder nor the names of its
- *   contributors may be used to endorse or promote products derived from
- *   this software without specific prior written permission.
- *
- * @copright
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
+ * @copyright
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  *
  * @file json/pair.hpp
  *
@@ -51,6 +34,10 @@ class Pair {
 public:
     Pair() noexcept = default;
 
+    Pair(Pair&& other) noexcept = default;
+
+    Pair(const Pair& other) noexcept = default;
+
     Pair(String&& str) noexcept;
 
     Pair(String&& str, Value&& val) noexcept;
@@ -62,6 +49,10 @@ public:
     Pair(const String& str, Value&& val) noexcept;
 
     Pair(const String& str, const Value& val) noexcept;
+
+    Pair(Value&& val) noexcept;
+
+    Pair(const Value& val) noexcept;
 
     Pair& operator=(Value&& val) noexcept;
 
@@ -85,8 +76,8 @@ public:
 
     ~Pair() noexcept;
 private:
-    String m_name{};
     Value m_value{};
+    String m_name{};
 };
 
 inline
@@ -96,14 +87,14 @@ Pair::Pair(String&& str) noexcept :
 
 inline
 Pair::Pair(String&& str, Value&& val) noexcept :
-    m_name{std::move(str)},
-    m_value{std::move(val)}
+    m_value{std::move(val)},
+    m_name{std::move(str)}
 { }
 
 inline
 Pair::Pair(String&& str, const Value& val) noexcept :
-    m_name{std::move(str)},
-    m_value{val}
+    m_value{val},
+    m_name{std::move(str)}
 { }
 
 inline
@@ -113,14 +104,24 @@ Pair::Pair(const String& str) noexcept :
 
 inline
 Pair::Pair(const String& str, Value&& val) noexcept :
-    m_name{str},
-    m_value{std::move(val)}
+    m_value{std::move(val)},
+    m_name{str}
 { }
 
 inline
 Pair::Pair(const String& str, const Value& val) noexcept :
-    m_name{str},
+    m_value{val},
+    m_name{str}
+{ }
+
+inline
+Pair::Pair(const Value& val) noexcept :
     m_value{val}
+{ }
+
+inline
+Pair::Pair(Value&& val) noexcept :
+    m_value{std::move(val)}
 { }
 
 inline auto

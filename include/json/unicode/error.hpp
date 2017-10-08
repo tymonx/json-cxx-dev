@@ -17,20 +17,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file json/string_view.cpp
+ * @file json/unicode/error.hpp
  *
- * @brief Implementation
+ * @brief JSON Unicode error interface
  */
 
-#include "json/string_view.hpp"
+#ifndef JSON_UNICODE_ERROR_HPP
+#define JSON_UNICODE_ERROR_HPP
 
-#include <type_traits>
+namespace json {
+namespace unicode {
 
-using json::StringView;
+enum class Error {
+    INVALID_UTF8_FIRST_CODE,
+    INVALID_UTF8_NEXT_CODE,
+    INVALID_UTF16_SURROGATE,
+    INVALID_CODE
+};
 
-static_assert(std::is_standard_layout<StringView>::value,
-        "json::StringView is not a standard layout");
-
-StringView StringView::subspan(size_type pos, size_type count) noexcept {
-    return Span::subspan(pos, count);
 }
+}
+
+#endif /* JSON_UNICODE_ERROR_HPP */

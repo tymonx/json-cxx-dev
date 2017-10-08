@@ -17,20 +17,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file json/string_view.cpp
+ * @file json/value_iterator.cpp
  *
  * @brief Implementation
  */
 
-#include "json/string_view.hpp"
+#include "json/value_iterator.hpp"
 
-#include <type_traits>
+#include "value_item.hpp"
 
-using json::StringView;
+using json::ValueIterator;
 
-static_assert(std::is_standard_layout<StringView>::value,
-        "json::StringView is not a standard layout");
-
-StringView StringView::subspan(size_type pos, size_type count) noexcept {
-    return Span::subspan(pos, count);
+template<> auto
+ValueIterator<true>::operator->() noexcept -> pointer {
+    return &reinterpret_cast<const ValueItem*>(&*m_iterator)->value;
 }
