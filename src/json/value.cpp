@@ -33,6 +33,16 @@ using json::Value;
 static_assert(std::is_standard_layout<Value>::value,
         "json::Value is not a standard layout");
 
+Value::Value(Pair&& pair) noexcept :
+    m_type{OBJECT},
+    m_object{std::move(pair)}
+{ }
+
+Value::Value(const Pair& pair) noexcept :
+    m_type{OBJECT},
+    m_object{pair}
+{ }
+
 Value::Value(Type value, allocator_type& alloc) noexcept :
     m_type{value}
 {
@@ -178,35 +188,9 @@ Value::operator Bool() const noexcept {
     return value;
 }
 
-void Value::push_back(const value_type& value) noexcept {
-    if (is_array()) {
-        m_array.emplace_back(value, this);
-    }
-    else if (is_object()) {
-        m_object.emplace_back(value, this);
-    }
-    else {
-        Array array;
-
-        if (!is_null()) {
-            array.emplace_back(std::move(*this), this);
-        }
-
-        array.emplace_back(value, this);
-
-        if (is_null()) {
-            m_type = ARRAY;
-            new (&m_array) Array(std::move(array));
-        }
-    }
-}
-
 void Value::push_back(value_type&& value) noexcept {
     if (is_array()) {
         m_array.emplace_back(std::move(value), this);
-    }
-    else if (is_object()) {
-        m_object.emplace_back(std::move(value), this);
     }
     else {
         Array array;
@@ -219,7 +203,67 @@ void Value::push_back(value_type&& value) noexcept {
 
         if (is_null()) {
             m_type = ARRAY;
-            new (&m_array) Array(std::move(array));
+            new (&m_array) Array{std::move(array)};
+        }
+    }
+}
+
+void Value::push_back(const value_type& value) noexcept {
+    if (is_array()) {
+        m_array.emplace_back(value, this);
+    }
+    else {
+        Array array;
+
+        if (!is_null()) {
+            array.emplace_back(std::move(*this), this);
+        }
+
+        array.emplace_back(value, this);
+
+        if (is_null()) {
+            m_type = ARRAY;
+            new (&m_array) Array{std::move(array)};
+        }
+    }
+}
+
+void Value::push_back(Pair&& pair) noexcept {
+    if (is_object()) {
+        m_object.emplace_back(std::move(pair), this);
+    }
+    else {
+        Object object;
+
+        if (!is_null()) {
+            object.emplace_back(Pair{{}, std::move(*this)}, this);
+        }
+
+        object.emplace_back(std::move(pair), this);
+
+        if (is_null()) {
+            m_type = OBJECT;
+            new (&m_object) Object{std::move(object)};
+        }
+    }
+}
+
+void Value::push_back(const Pair& pair) noexcept {
+    if (is_object()) {
+        m_object.emplace_back(pair, this);
+    }
+    else {
+        Object object;
+
+        if (!is_null()) {
+            object.emplace_back(Pair{{}, std::move(*this)}, this);
+        }
+
+        object.emplace_back(pair, this);
+
+        if (is_null()) {
+            m_type = OBJECT;
+            new (&m_object) Object{object};
         }
     }
 }
@@ -231,6 +275,19 @@ void Value::pop_back() noexcept {
     else if (is_object()) {
         m_object.pop_back();
     }
+}
+
+Value::size_type Value::size() const noexcept {
+    size_type value = 0;
+
+    if (is_array()) {
+        value = m_array.size();
+    }
+    else if (is_object()) {
+        value = m_object.size();
+    }
+
+    return value;
 }
 
 Value::iterator Value::begin() noexcept {

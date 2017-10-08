@@ -22,6 +22,7 @@ add_library(json-core OBJECT
     object_iterator.cpp
     pair.cpp
     value.cpp
+    value_iterator.cpp
     list.cpp
     number.cpp
     list_iterator.cpp

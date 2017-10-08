@@ -30,6 +30,7 @@
 #include "list_iterator.hpp"
 
 #include <cstddef>
+#include <utility>
 
 namespace json {
 
@@ -47,6 +48,12 @@ public:
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
     List() noexcept = default;
+
+    List(List&& other) noexcept;
+
+    List& operator=(List&& other) noexcept;
+
+    void assign(List&& other) noexcept;
 
     bool empty() const noexcept;
 
@@ -97,6 +104,17 @@ private:
     ListItem* m_first{nullptr};
     ListItem* m_last{nullptr};
 };
+
+inline
+List::List(List&& other) noexcept {
+    assign(std::move(other));
+}
+
+inline auto
+List::operator=(List&& other) noexcept -> List& {
+    assign(std::move(other));
+    return *this;
+}
 
 inline bool
 List::empty() const noexcept {

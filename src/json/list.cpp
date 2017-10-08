@@ -34,6 +34,15 @@ static_assert(std::is_standard_layout<List>::value,
 static_assert(std::is_standard_layout<json::ListItem>::value,
         "json::ListItem is not a standard layout");
 
+void List::assign(List&& other) noexcept {
+    if (this != &other) {
+        m_first = other.m_first;
+        m_last = other.m_last;
+
+        other.clear();
+    }
+}
+
 void List::push_back(ListItem& item) noexcept {
     item.prev = m_last;
     item.next = nullptr;

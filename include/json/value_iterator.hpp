@@ -34,12 +34,18 @@
 namespace json {
 
 class Value;
+class String;
 
 template<bool is_const>
 class ValueIterator {
 public:
     using value_type = typename std::conditional<is_const,
           const Value, Value>::type;
+
+    using string_type = typename std::conditional<is_const,
+          const String, String>::type;
+
+    using string_reference = string_type&;
 
     using pointer = value_type*;
     using reference = value_type&;
@@ -111,6 +117,10 @@ public:
 
     template<bool other_is_const>
     bool operator!=(const ValueIterator<other_is_const>& other) const noexcept;
+
+    string_reference name() noexcept;
+
+    string_reference name() const noexcept;
 
     const ListIterator<is_const>& base() const noexcept;
 private:
@@ -251,6 +261,19 @@ template<bool is_const> inline auto
 ValueIterator<is_const>::base() const noexcept ->
         const ListIterator<is_const>& {
     return m_iterator;
+}
+
+template<> auto
+ValueIterator<true>::name() noexcept -> string_reference;
+
+template<> inline auto
+ValueIterator<false>::name() noexcept -> string_reference {
+    return const_cast<string_reference>(ValueIterator<true>{*this}.name());
+}
+
+template<bool is_const> inline auto
+ValueIterator<is_const>::name() const noexcept -> string_reference {
+    return const_cast<ValueIterator<is_const>*>(this)->name();
 }
 
 }

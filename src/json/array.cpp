@@ -103,7 +103,7 @@ void Array::push_back(const value_type& value) noexcept {
 void Array::push_back(value_type&& value) noexcept {
     auto ptr = allocator().allocate<ArrayItem>();
     if (ptr) {
-        new (&ptr->value) Value(std::move(value));
+        new (&ptr->value) Value{std::move(value)};
         m_list.push_back(ptr->list);
     }
 }

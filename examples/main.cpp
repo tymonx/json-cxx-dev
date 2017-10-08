@@ -19,11 +19,22 @@
  * */
 
 #include "json/string.hpp"
+#include "json/pair.hpp"
+#include "json/value.hpp"
 
-using json::String;
+#include <iostream>
 
 int main() {
-    String str{"Dupa"};
+    json::Value value;
 
-    str.insert(3, "test");
+    value.emplace_back("a", 1);
+    value.emplace_back("b", 2);
+    value.emplace_back("c", 3);
+    value.emplace_back("d", 4);
+
+    std::cout << "Size: " << value.size() << std::endl;
+
+    for (const auto& item : value) {
+        std::cout << json::Int(item) << std::endl;
+    }
 }

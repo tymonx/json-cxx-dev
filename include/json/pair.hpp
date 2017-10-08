@@ -32,39 +32,27 @@ namespace json {
 
 class Pair {
 public:
-    Pair() noexcept = default;
+    Pair() noexcept;
 
     Pair(Pair&& other) noexcept = default;
 
     Pair(const Pair& other) noexcept = default;
 
-    Pair(String&& str) noexcept;
+    Pair(Pair&& other, Value* parent) noexcept;
+
+    Pair(const Pair& other, Value* parent) noexcept;
 
     Pair(String&& str, Value&& val) noexcept;
 
     Pair(String&& str, const Value& val) noexcept;
 
-    Pair(const String& str) noexcept;
-
     Pair(const String& str, Value&& val) noexcept;
 
     Pair(const String& str, const Value& val) noexcept;
 
-    Pair(Value&& val) noexcept;
-
-    Pair(const Value& val) noexcept;
-
     Pair& operator=(Value&& val) noexcept;
 
     Pair& operator=(const Value& val) noexcept;
-
-    operator const String&() const noexcept;
-
-    operator String&() noexcept;
-
-    operator Value&() noexcept;
-
-    operator const Value&() const noexcept;
 
     String& name() noexcept;
 
@@ -81,8 +69,19 @@ private:
 };
 
 inline
-Pair::Pair(String&& str) noexcept :
-    m_name{std::move(str)}
+Pair::Pair() noexcept
+{ }
+
+inline
+Pair::Pair(Pair&& other, Value* parent) noexcept :
+    m_value{std::move(other.m_value), parent},
+    m_name{std::move(other.m_name)}
+{ }
+
+inline
+Pair::Pair(const Pair& other, Value* parent) noexcept :
+    m_value{other.m_value, parent},
+    m_name{other.m_name}
 { }
 
 inline
@@ -98,11 +97,6 @@ Pair::Pair(String&& str, const Value& val) noexcept :
 { }
 
 inline
-Pair::Pair(const String& str) noexcept :
-    m_name{str}
-{ }
-
-inline
 Pair::Pair(const String& str, Value&& val) noexcept :
     m_value{std::move(val)},
     m_name{str}
@@ -112,16 +106,6 @@ inline
 Pair::Pair(const String& str, const Value& val) noexcept :
     m_value{val},
     m_name{str}
-{ }
-
-inline
-Pair::Pair(const Value& val) noexcept :
-    m_value{val}
-{ }
-
-inline
-Pair::Pair(Value&& val) noexcept :
-    m_value{std::move(val)}
 { }
 
 inline auto
@@ -154,26 +138,6 @@ inline auto
 Pair::operator=(const Value& val) noexcept -> Pair& {
     m_value = val;
     return *this;
-}
-
-inline
-Pair::operator String&() noexcept {
-    return m_name;
-}
-
-inline
-Pair::operator const String&() const noexcept {
-    return m_name;
-}
-
-inline
-Pair::operator Value&() noexcept {
-    return m_value;
-}
-
-inline
-Pair::operator const Value&() const noexcept {
-    return m_value;
 }
 
 }

@@ -98,6 +98,8 @@ public:
 
     template<bool other_is_const>
     bool operator!=(const ListIterator<other_is_const>& other) const noexcept;
+
+    pointer base() const noexcept;
 private:
     pointer m_item{nullptr};
 };
@@ -237,6 +239,11 @@ template<bool other_is_const> inline auto
 ListIterator<is_const>::operator!=(
         const ListIterator<other_is_const>& other) const noexcept -> bool {
     return m_item != &(*other);
+}
+
+template<bool is_const> inline auto
+ListIterator<is_const>::base() const noexcept -> pointer {
+    return m_item;
 }
 
 }

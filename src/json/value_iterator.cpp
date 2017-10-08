@@ -30,5 +30,10 @@ using json::ValueIterator;
 
 template<> auto
 ValueIterator<true>::operator->() noexcept -> pointer {
-    return &reinterpret_cast<const ValueItem*>(&*m_iterator)->value;
+    return &reinterpret_cast<const ValueItem*>(m_iterator.base())->value;
+}
+
+template<> auto
+ValueIterator<true>::name() noexcept -> string_reference {
+    return reinterpret_cast<const ValueItem*>(m_iterator.base())->pair.name();
 }

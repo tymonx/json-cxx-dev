@@ -33,6 +33,7 @@
 #include "value_iterator.hpp"
 
 #include <utility>
+#include <type_traits>
 
 namespace json {
 
@@ -50,6 +51,17 @@ public:
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
+    template<typename T>
+    using enable_boolean = typename std::enable_if<
+            std::is_same<T, Bool>::value
+        , int>::type;
+
+    template<typename T>
+    using enable_number = typename std::enable_if<
+            std::is_arithmetic<T>::value &&
+            !std::is_same<T, Bool>::value
+        , long>::type;
+
     enum Type {
         NIL,
         BOOLEAN,
@@ -66,7 +78,11 @@ public:
 
     Value(Null value) noexcept;
 
-    Value(Bool value) noexcept;
+    template<typename T, enable_number<T> = 0>
+    Value(T value) noexcept;
+
+    template<typename T, enable_boolean<T> = 0>
+    Value(T value) noexcept;
 
     Value(String&& string) noexcept;
 
@@ -83,6 +99,10 @@ public:
     Value(Object&& object) noexcept;
 
     Value(const Object& object) noexcept;
+
+    Value(Pair&& pair) noexcept;
+
+    Value(const Pair& pair) noexcept;
 
     Value(Value&& other) noexcept;
 
@@ -136,6 +156,12 @@ public:
 
     operator Bool() const noexcept;
 
+    operator Int() const noexcept;
+
+    operator Uint() const noexcept;
+
+    operator Double() const noexcept;
+
     operator const Number&() const noexcept;
 
     operator const String&() const noexcept;
@@ -150,14 +176,20 @@ public:
 
     bool is_root() const noexcept;
 
+    void push_back(value_type&& value) noexcept;
+
     void push_back(const value_type& value) noexcept;
 
-    void push_back(value_type&& value) noexcept;
+    void push_back(Pair&& pair) noexcept;
+
+    void push_back(const Pair& pair) noexcept;
 
     template<typename... Args>
     void emplace_back(Args&&... args) noexcept;
 
     void pop_back() noexcept;
+
+    size_type size() const noexcept;
 
     iterator begin() noexcept;
 
@@ -212,8 +244,13 @@ inline
 Value::Value(Null) noexcept
 { }
 
-inline
-Value::Value(Bool value) noexcept :
+template<typename T, Value::enable_number<T>> inline
+Value::Value(T value) noexcept :
+    Value{Number{value}}
+{ }
+
+template<typename T, Value::enable_boolean<T>> inline
+Value::Value(T value) noexcept :
     m_type{BOOLEAN},
     m_boolean{value}
 { }
@@ -373,6 +410,21 @@ Value::as_object() const noexcept -> const Object&  {
 inline
 Value::operator Null() const noexcept {
     return nullptr;
+}
+
+inline
+Value::operator Int() const noexcept {
+    return Int(m_number);
+}
+
+inline
+Value::operator Uint() const noexcept {
+    return Uint(m_number);
+}
+
+inline
+Value::operator Double() const noexcept {
+    return Double(m_number);
 }
 
 inline

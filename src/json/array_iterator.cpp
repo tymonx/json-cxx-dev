@@ -30,5 +30,5 @@ using json::ArrayIterator;
 
 template<> auto
 ArrayIterator<true>::operator->() noexcept -> pointer {
-    return &reinterpret_cast<const ArrayItem*>(&*m_iterator)->value;
+    return &reinterpret_cast<const ArrayItem*>(m_iterator.base())->value;
 }

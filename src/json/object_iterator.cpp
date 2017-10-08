@@ -30,5 +30,5 @@ using json::ObjectIterator;
 
 template<> auto
 ObjectIterator<true>::operator->() noexcept -> pointer {
-    return &reinterpret_cast<const ObjectItem*>(&*m_iterator)->pair;
+    return &reinterpret_cast<const ObjectItem*>(m_iterator.base())->pair;
 }
