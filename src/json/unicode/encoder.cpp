@@ -78,7 +78,13 @@ void Encoder::encoding(Encoding encoding_type) noexcept {
         m_state = &Encoder::encode_utf16_code;
         break;
     case Encoding::UTF32:
-        m_state = &Encoder::encode_utf32_code;
+        m_state = &Encoder::encode_utf32_bom;
+        break;
+    case Encoding::UTF32_BE:
+        m_state = &Encoder::encode_utf32_be_code;
+        break;
+    case Encoding::UTF32_LE:
+        m_state = &Encoder::encode_utf32_le_code;
         break;
     default:
         break;
@@ -87,7 +93,7 @@ void Encoder::encoding(Encoding encoding_type) noexcept {
 
 void Encoder::encode_utf8_code(char32_t ch) noexcept {
     if (is_utf8_1_byte(ch)) {
-        m_observer.get().unicode_encoded(ch & UTF8_1_BYTES_MASK);
+        m_observer.get().unicode_encoded(ch);
     }
     else if (is_utf8_2_bytes(ch)) {
         m_observer.get().unicode_encoded(UTF8_2_BYTES_CODE |
@@ -142,7 +148,19 @@ void Encoder::encode_utf16_code(char32_t ch) noexcept {
     }
 }
 
-void Encoder::encode_utf32_code(char32_t ch) noexcept {
+void Encoder::encode_utf32_bom(char32_t ch) noexcept {
+}
+
+void Encoder::encode_utf32_be_code(char32_t ch) noexcept {
+    if (is_utf32_range(ch)) {
+        m_observer.get().unicode_encoded(ch);
+    }
+    else {
+        m_observer.get().unicode_encoded(ch, Error::INVALID_CODE);
+    }
+}
+
+void Encoder::encode_utf32_le_code(char32_t ch) noexcept {
     if (is_utf32_range(ch)) {
         m_observer.get().unicode_encoded(ch);
     }

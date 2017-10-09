@@ -60,7 +60,11 @@ private:
 
     void encode_utf16_code(char32_t ch) noexcept;
 
-    void encode_utf32_code(char32_t ch) noexcept;
+    void encode_utf32_bom(char32_t ch) noexcept;
+
+    void encode_utf32_be_code(char32_t ch) noexcept;
+
+    void encode_utf32_le_code(char32_t ch) noexcept;
 
     std::reference_wrapper<Observer> m_observer;
     StateHandler m_state{&Encoder::encode_utf8_code};

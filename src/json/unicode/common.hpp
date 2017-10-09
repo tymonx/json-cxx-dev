@@ -61,9 +61,24 @@ static constexpr char32_t UTF16_HIGH_SURROGATE_MIN{0xD800};
 static constexpr char32_t UTF16_HIGH_SURROGATE_MAX{0xDBFF};
 static constexpr char32_t UTF16_HIGH_SURROGATE_MASK{0x3FF};
 
+static constexpr char32_t UTF16_BOM_BE{0xFEFF};
+static constexpr char32_t UTF16_BOM_LE{0xFFFE};
+
+static constexpr char32_t UTF32_BOM_BE{0x0000FEFF};
+static constexpr char32_t UTF32_BOM_LE{0xFFFE0000};
+
 static constexpr char32_t SUPPLEMENTARY_MULTILINGUAL_PLANE{0x10000};
 
 static constexpr char32_t UNICODE_MAX{0x10FFFF};
+
+static inline char16_t utf16_swap(char16_t ch) noexcept {
+    return (char16_t(ch << 8) | char16_t(ch >> 8));
+}
+
+static inline char32_t utf32_swap(char32_t ch) noexcept {
+    return (ch << 24) | (ch >> 24) | ((ch >> 8) & 0x000000FF00) |
+        ((ch << 8) & 0x00FF0000);
+}
 
 }
 }

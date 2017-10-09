@@ -64,11 +64,23 @@ private:
 
     void decode_utf8_code4(char32_t ch) noexcept;
 
-    void decode_utf16_code1(char32_t ch) noexcept;
+    void decode_utf16_bom(char32_t ch) noexcept;
+
+    void decode_utf16_be_code1(char32_t ch) noexcept;
+
+    void decode_utf16_be_code2(char32_t ch) noexcept;
+
+    void decode_utf16_le_code1(char32_t ch) noexcept;
+
+    void decode_utf16_le_code2(char32_t ch) noexcept;
 
     void decode_utf16_code2(char32_t ch) noexcept;
 
-    void decode_utf32_code(char32_t ch) noexcept;
+    void decode_utf32_bom(char32_t ch) noexcept;
+
+    void decode_utf32_be_code(char32_t ch) noexcept;
+
+    void decode_utf32_le_code(char32_t ch) noexcept;
 
     void decoded(char32_t ch) noexcept;
 

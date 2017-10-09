@@ -31,7 +31,11 @@ namespace unicode {
 enum class Encoding {
     UTF8,
     UTF16,
-    UTF32
+    UTF16_BE,
+    UTF16_LE,
+    UTF32,
+    UTF32_BE,
+    UTF32_LE
 };
 
 }

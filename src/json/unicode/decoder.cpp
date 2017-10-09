@@ -75,10 +75,22 @@ void Decoder::encoding(Encoding encoding_type) noexcept {
         m_state = &Decoder::decode_utf8_code1;
         break;
     case Encoding::UTF16:
-        m_state = &Decoder::decode_utf16_code1;
+        m_state = &Decoder::decode_utf16_bom;
+        break;
+    case Encoding::UTF16_BE:
+        m_state = &Decoder::decode_utf16_be_code1;
+        break;
+    case Encoding::UTF16_LE:
+        m_state = &Decoder::decode_utf16_le_code1;
         break;
     case Encoding::UTF32:
-        m_state = &Decoder::decode_utf32_code;
+        m_state = &Decoder::decode_utf32_bom;
+        break;
+    case Encoding::UTF32_BE:
+        m_state = &Decoder::decode_utf32_be_code;
+        break;
+    case Encoding::UTF32_LE:
+        m_state = &Decoder::decode_utf32_le_code;
         break;
     default:
         break;
@@ -152,9 +164,21 @@ void Decoder::decode_utf8_code4(char32_t ch) noexcept {
     }
 }
 
-void Decoder::decode_utf16_code1(char32_t ch) noexcept {
+void Decoder::decode_utf16_bom(char32_t ch) noexcept {
+    if (UTF16_BOM_LE == ch) {
+        m_state = &Decoder::decode_utf16_le_code1;
+    }
+    else {
+        m_state = &Decoder::decode_utf16_be_code1;
+        if (UTF16_BOM_BE != ch) {
+            (*this.*m_state)(ch);
+        }
+    }
+}
+
+void Decoder::decode_utf16_be_code1(char32_t ch) noexcept {
     if (is_utf16_high_surrogate(ch)) {
-        m_state = &Decoder::decode_utf16_code1;
+        m_state = &Decoder::decode_utf16_be_code2;
         m_unicode = (ch - UTF16_HIGH_SURROGATE_MIN);
     }
     else {
@@ -163,8 +187,6 @@ void Decoder::decode_utf16_code1(char32_t ch) noexcept {
 }
 
 void Decoder::decode_utf16_code2(char32_t ch) noexcept {
-    m_state = &Decoder::decode_utf16_code1;
-
     if (is_utf16_low_surrogate(ch)) {
         ch -= UTF16_LOW_SURROGATE_MIN;
         ch |= (m_unicode << 10);
@@ -176,6 +198,40 @@ void Decoder::decode_utf16_code2(char32_t ch) noexcept {
     }
 }
 
-void Decoder::decode_utf32_code(char32_t ch) noexcept {
+void Decoder::decode_utf16_be_code2(char32_t ch) noexcept {
+    m_state = &Decoder::decode_utf16_be_code1;
+    decode_utf16_code2(ch);
+}
+
+void Decoder::decode_utf16_le_code1(char32_t ch) noexcept {
+    decode_utf16_be_code1(utf16_swap(char16_t(ch)));
+
+    if (m_state == &Decoder::decode_utf16_be_code2) {
+        m_state = &Decoder::decode_utf16_le_code2;
+    }
+}
+
+void Decoder::decode_utf16_le_code2(char32_t ch) noexcept {
+    m_state = &Decoder::decode_utf16_le_code1;
+    decode_utf16_code2(utf16_swap(char16_t(ch)));
+}
+
+void Decoder::decode_utf32_bom(char32_t ch) noexcept {
+    if (UTF32_BOM_LE == ch) {
+        m_state = &Decoder::decode_utf32_le_code;
+    }
+    else {
+        m_state = &Decoder::decode_utf32_be_code;
+        if (UTF32_BOM_BE != ch) {
+            (*this.*m_state)(ch);
+        }
+    }
+}
+
+void Decoder::decode_utf32_be_code(char32_t ch) noexcept {
     decoded(ch);
+}
+
+void Decoder::decode_utf32_le_code(char32_t ch) noexcept {
+    decoded(utf32_swap(ch));
 }
