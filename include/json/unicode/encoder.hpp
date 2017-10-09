@@ -27,7 +27,6 @@
 
 #include "error.hpp"
 #include "encoding.hpp"
-#include "byte_order.hpp"
 
 #include <functional>
 
@@ -47,10 +46,11 @@ public:
 
     Encoder(Observer& observer) noexcept;
 
-    void encoding(Encoding encoding_type,
-            ByteOrder byte_order = ByteOrder::BIG_ENDIAN_ORDER) noexcept;
+    Encoder(Observer& observer, Encoding encoding_type,
+            bool byte_order_mark = false) noexcept;
 
-    void insert_byte_order_mark() noexcept;
+    void encoding(Encoding encoding_type,
+            bool byte_order_mark = false) noexcept;
 
     void encode(char ch) noexcept;
 
@@ -66,6 +66,12 @@ private:
     static char32_t utf16_little_endian(char32_t ch) noexcept;
 
     static char32_t utf32_little_endian(char32_t ch) noexcept;
+
+    void encode_utf8_bom(char32_t ch) noexcept;
+
+    void encode_utf16_bom(char32_t ch) noexcept;
+
+    void encode_utf32_bom(char32_t ch) noexcept;
 
     void encode_utf8_code(char32_t ch) noexcept;
 
@@ -86,6 +92,14 @@ inline
 Encoder::Encoder(Observer& observer) noexcept :
     m_observer{observer}
 { }
+
+inline
+Encoder::Encoder(Observer& observer, Encoding encoding_type,
+        bool byte_order_mark) noexcept :
+    m_observer{observer}
+{
+    encoding(encoding_type, byte_order_mark);
+}
 
 inline void
 Encoder::encode(char ch) noexcept {

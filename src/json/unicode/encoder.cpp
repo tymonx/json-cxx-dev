@@ -82,54 +82,48 @@ char32_t Encoder::utf32_little_endian(char32_t ch) noexcept {
 
 Encoder::Observer::~Observer() noexcept { }
 
-void Encoder::encoding(Encoding encoding_type, ByteOrder byte_order) noexcept {
+void Encoder::encoding(Encoding encoding_type, bool byte_order_mark) noexcept {
     switch (encoding_type) {
     case Encoding::UTF8:
-        m_byte_order = unicode_big_endian;
-        m_state = &Encoder::encode_utf8_code;
-        break;
     case Encoding::UTF16:
-        if (ByteOrder::BIG_ENDIAN_ORDER == byte_order) {
-            m_byte_order = unicode_big_endian;
-        }
-        else {
-            m_byte_order = utf16_little_endian;
-        }
-        m_state = &Encoder::encode_utf16_code;
-        break;
     case Encoding::UTF16_BE:
+    case Encoding::UTF32:
+    case Encoding::UTF32_BE:
         m_byte_order = unicode_big_endian;
-        m_state = &Encoder::encode_utf16_code;
         break;
     case Encoding::UTF16_LE:
         m_byte_order = utf16_little_endian;
-        m_state = &Encoder::encode_utf16_code;
-        break;
-    case Encoding::UTF32:
-        if (ByteOrder::BIG_ENDIAN_ORDER == byte_order) {
-            m_byte_order = unicode_big_endian;
-        }
-        else {
-            m_byte_order = utf16_little_endian;
-        }
-        m_byte_order = unicode_big_endian;
-        m_state = &Encoder::encode_utf32_code;
-        break;
-    case Encoding::UTF32_BE:
-        m_byte_order = unicode_big_endian;
-        m_state = &Encoder::encode_utf32_code;
         break;
     case Encoding::UTF32_LE:
         m_byte_order = utf32_little_endian;
-        m_state = &Encoder::encode_utf32_code;
         break;
     default:
         break;
     }
-}
 
-void Encoder::insert_byte_order_mark() noexcept {
-    write(UNICODE_BOM);
+    switch (encoding_type) {
+    case Encoding::UTF8:
+        m_state = byte_order_mark ?
+            &Encoder::encode_utf8_bom :
+            &Encoder::encode_utf8_code;
+        break;
+    case Encoding::UTF16:
+    case Encoding::UTF16_BE:
+    case Encoding::UTF16_LE:
+        m_state = byte_order_mark ?
+            &Encoder::encode_utf16_bom :
+            &Encoder::encode_utf16_code;
+        break;
+    case Encoding::UTF32:
+    case Encoding::UTF32_BE:
+    case Encoding::UTF32_LE:
+        m_state = byte_order_mark ?
+            &Encoder::encode_utf32_bom :
+            &Encoder::encode_utf32_code;
+        break;
+    default:
+        break;
+    }
 }
 
 void Encoder::write(char32_t ch) noexcept {
@@ -138,6 +132,27 @@ void Encoder::write(char32_t ch) noexcept {
 
 void Encoder::write(char32_t ch, Error error) noexcept {
     m_observer.get().unicode_encoded(m_byte_order(ch), error);
+}
+
+void Encoder::encode_utf8_bom(char32_t ch) noexcept {
+    write(UNICODE_BOM);
+
+    m_state = &Encoder::encode_utf8_code;
+    (*this.*m_state)(ch);
+}
+
+void Encoder::encode_utf16_bom(char32_t ch) noexcept {
+    write(UNICODE_BOM);
+
+    m_state = &Encoder::encode_utf16_code;
+    (*this.*m_state)(ch);
+}
+
+void Encoder::encode_utf32_bom(char32_t ch) noexcept {
+    write(UNICODE_BOM);
+
+    m_state = &Encoder::encode_utf32_code;
+    (*this.*m_state)(ch);
 }
 
 void Encoder::encode_utf8_code(char32_t ch) noexcept {
