@@ -69,6 +69,7 @@ static constexpr char32_t UTF32_BOM_LE{0xFFFE0000};
 
 static constexpr char32_t SUPPLEMENTARY_MULTILINGUAL_PLANE{0x10000};
 
+static constexpr char32_t UNICODE_BOM{0xFEFF};
 static constexpr char32_t UNICODE_MAX{0x10FFFF};
 
 static inline char16_t utf16_swap(char16_t ch) noexcept {

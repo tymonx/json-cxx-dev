@@ -27,6 +27,7 @@
 
 #include "error.hpp"
 #include "encoding.hpp"
+#include "byte_order.hpp"
 
 #include <functional>
 
@@ -46,7 +47,10 @@ public:
 
     Encoder(Observer& observer) noexcept;
 
-    void encoding(Encoding encoding_type) noexcept;
+    void encoding(Encoding encoding_type,
+            ByteOrder byte_order = ByteOrder::BIG_ENDIAN_ORDER) noexcept;
+
+    void insert_byte_order_mark() noexcept;
 
     void encode(char ch) noexcept;
 
@@ -55,18 +59,26 @@ public:
     void encode(char32_t ch) noexcept;
 private:
     using StateHandler = void (Encoder::*)(char32_t ch);
+    using ByteOrderHandler = char32_t (*)(char32_t ch);
+
+    static char32_t unicode_big_endian(char32_t ch) noexcept;
+
+    static char32_t utf16_little_endian(char32_t ch) noexcept;
+
+    static char32_t utf32_little_endian(char32_t ch) noexcept;
 
     void encode_utf8_code(char32_t ch) noexcept;
 
     void encode_utf16_code(char32_t ch) noexcept;
 
-    void encode_utf32_bom(char32_t ch) noexcept;
+    void encode_utf32_code(char32_t ch) noexcept;
 
-    void encode_utf32_be_code(char32_t ch) noexcept;
+    void write(char32_t ch) noexcept;
 
-    void encode_utf32_le_code(char32_t ch) noexcept;
+    void write(char32_t ch, Error error) noexcept;
 
     std::reference_wrapper<Observer> m_observer;
+    ByteOrderHandler m_byte_order{unicode_big_endian};
     StateHandler m_state{&Encoder::encode_utf8_code};
 };
 
