@@ -71,7 +71,7 @@ public:
     constexpr Span(pointer ptr, size_type n) noexcept;
 
     template<typename InputIt>
-    Span(InputIt input_first, InputIt input_last) noexcept;
+    Span(InputIt first, InputIt last) noexcept;
 
     template<std::size_t N> constexpr
     Span(value_type (&arr)[N]) noexcept;
@@ -144,108 +144,108 @@ private:
     size_type m_size{0};
 };
 
-template<typename T> inline constexpr
+template<typename T> constexpr
 Span<T>::Span(std::nullptr_t) noexcept { }
 
 template<typename T> template<typename U, typename std::enable_if<
-    std::is_const<U>::value>::type> inline constexpr
+    std::is_const<U>::value>::type> constexpr
 Span<T>::Span(const Span<
         typename std::remove_const<U>::type>& other) noexcept :
     m_data{other.data()}, m_size{other.size()}
 { }
 
-template<typename T> template<typename U, typename> inline constexpr
+template<typename T> template<typename U, typename> constexpr
 Span<T>::Span(const U& other) noexcept :
     m_data{other.data()}, m_size{other.size()}
 { }
 
-template<typename T> template<typename U, typename> inline constexpr
+template<typename T> template<typename U, typename> constexpr
 Span<T>::Span(U& other) noexcept :
     m_data{other.data()}, m_size{other.size()}
 { }
 
-template<typename T> inline constexpr
+template<typename T> constexpr
 Span<T>::Span(pointer ptr, size_type n) noexcept :
     m_data{ptr}, m_size{n}
 { }
 
-template<typename T> template<typename InputIt> inline
-Span<T>::Span(InputIt input_first, InputIt input_last) noexcept :
-    m_data{&(*input_first)},
-    m_size{size_type(std::distance(input_first, input_last))}
+template<typename T> template<typename InputIt>
+Span<T>::Span(InputIt first, InputIt last) noexcept :
+    m_data{&*first},
+    m_size{(first < last) ? size_type(last - first) : 0}
 { }
 
-template<typename T> template<std::size_t N> inline constexpr
+template<typename T> template<std::size_t N> constexpr
 Span<T>::Span(value_type (&arr)[N]) noexcept :
     m_data{arr}, m_size{N}
 { }
 
-template<typename T> inline constexpr auto
+template<typename T> constexpr auto
 Span<T>::size() const noexcept -> size_type {
     return m_size;
 }
 
-template<typename T> inline constexpr auto
+template<typename T> constexpr auto
 Span<T>::length() const noexcept -> size_type {
     return m_size;
 }
 
-template<typename T> inline constexpr auto
+template<typename T> constexpr auto
 Span<T>::empty() const noexcept -> bool {
     return (0 == m_size);
 }
 
-template<typename T> inline constexpr auto
+template<typename T> constexpr auto
 Span<T>::operator!() const noexcept -> bool {
     return (0 == m_size);
 }
 
-template<typename T> inline constexpr
+template<typename T> constexpr
 Span<T>::operator bool() const noexcept {
     return (0 != m_size);
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::data() noexcept -> pointer {
     return m_data;
 }
 
-template<typename T> inline constexpr auto
+template<typename T> constexpr auto
 Span<T>::data() const noexcept -> const_pointer {
     return m_data;
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::front() noexcept -> reference {
     return *m_data;
 }
 
-template<typename T> inline constexpr auto
+template<typename T> constexpr auto
 Span<T>::front() const noexcept -> const_reference {
     return *m_data;
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::back() noexcept -> reference {
     return *(m_data + m_size - 1);
 }
 
-template<typename T> inline constexpr auto
+template<typename T> constexpr auto
 Span<T>::back() const noexcept -> const_reference {
     return *(m_data + m_size - 1);
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::operator[](size_type pos) noexcept -> reference {
     return *(m_data + pos);
 }
 
-template<typename T> inline constexpr auto
+template<typename T> constexpr auto
 Span<T>::operator[](size_type pos) const noexcept -> const_reference {
     return *(m_data + pos);
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::first(size_type count) const noexcept -> Span {
     if (count > size()) {
         count = size();
@@ -253,7 +253,7 @@ Span<T>::first(size_type count) const noexcept -> Span {
     return {m_data, count};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::last(size_type count) const noexcept -> Span {
     if (count > size()) {
         count = size();
@@ -267,73 +267,73 @@ Span<T>::subspan(size_type offset,
     return last(size() - offset).first(count);
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::begin() noexcept -> iterator {
     return iterator{m_data};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::begin() const noexcept -> const_iterator {
     return const_iterator{m_data};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::cbegin() const noexcept -> const_iterator {
     return const_iterator{m_data};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::end() noexcept -> iterator {
     return iterator{m_data + m_size};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::end() const noexcept -> const_iterator {
     return const_iterator{m_data + m_size};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::cend() const noexcept -> const_iterator {
     return const_iterator{m_data + m_size};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::rbegin() noexcept -> reverse_iterator {
     return iterator{m_data + m_size - 1};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::rbegin() const noexcept -> const_reverse_iterator {
     return const_iterator{m_data + m_size - 1};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::crbegin() const noexcept -> const_reverse_iterator {
     return const_iterator{m_data + m_size - 1};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::rend() noexcept -> reverse_iterator {
     return iterator{m_data - 1};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::rend() const noexcept -> const_reverse_iterator {
     return const_iterator{m_data - 1};
 }
 
-template<typename T> inline auto
+template<typename T> auto
 Span<T>::crend() const noexcept -> const_reverse_iterator {
     return const_iterator{m_data - 1};
 }
 
-template<typename T1, typename T2 = T1> static inline bool
+template<typename T1, typename T2 = T1> static bool
 operator==(const Span<T1>& lhs, const Span<T2>& rhs) noexcept {
     return (lhs.size() == rhs.size())
         ? std::equal(lhs.cbegin(), lhs.cend(), rhs.cbegin()) : false;
 }
 
-template<typename T1, typename T2 = T1> static inline bool
+template<typename T1, typename T2 = T1> static bool
 operator!=(const Span<T1>& lhs, const Span<T2>& rhs) noexcept {
     return !(lhs == rhs);
 }

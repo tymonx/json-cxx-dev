@@ -26,18 +26,14 @@
 #define JSON_STRING_HPP
 
 #include "types.hpp"
-#include "allocator.hpp"
-#include "string_view.hpp"
 
-#include <limits>
-#include <cstdint>
-#include <cstddef>
-#include <utility>
 #include <iterator>
-#include <algorithm>
 #include <initializer_list>
 
 namespace json {
+
+class Allocator;
+class StringView;
 
 class String {
 public:
@@ -53,9 +49,9 @@ public:
     using reverse_iterator = std::reverse_iterator<iterator>;
     using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-    static constexpr size_type npos = std::numeric_limits<size_type>::max();
+    static const size_type npos;
 
-    String() noexcept = default;
+    String() noexcept;
 
     String(allocator_type& alloc) noexcept;
 
@@ -67,23 +63,36 @@ public:
 
     String(String&& other, allocator_type& alloc) noexcept;
 
-    String(size_type count, value_type ch,
-            allocator_type& alloc = Allocator::get_instance()) noexcept;
+    String(size_type count, value_type ch) noexcept;
 
-    String(const_pointer s,
-            allocator_type& alloc = Allocator::get_instance()) noexcept;
+    String(size_type count, value_type ch, allocator_type& alloc) noexcept;
 
-    String(const_pointer s, size_type count,
-            allocator_type& alloc = Allocator::get_instance()) noexcept;
+    String(const_pointer s) noexcept;
+
+    String(const_pointer s, allocator_type& alloc) noexcept;
+
+    String(const_pointer s, size_type count) noexcept;
+
+    String(const_pointer s, size_type count, allocator_type& alloc) noexcept;
+
+    String(const_iterator first, const_iterator last) noexcept;
 
     String(const_iterator first, const_iterator last,
-            allocator_type& alloc = Allocator::get_instance()) noexcept;
+            allocator_type& alloc) noexcept;
 
-    String(const String& other, size_type pos, size_type count = npos,
-            allocator_type& alloc = Allocator::get_instance()) noexcept;
+    String(const String& other, size_type pos, size_type count = npos) noexcept;
+
+    String(const String& other, size_type pos, size_type count,
+            allocator_type& alloc) noexcept;
+
+    String(std::initializer_list<value_type> ilist) noexcept;
 
     String(std::initializer_list<value_type> ilist,
-            allocator_type& alloc = Allocator::get_instance()) noexcept;
+            allocator_type& alloc) noexcept;
+
+    String(const StringView& other) noexcept;
+
+    String(const StringView& other, allocator_type& alloc) noexcept;
 
     String& operator=(const String& other) noexcept;
 
@@ -95,14 +104,16 @@ public:
 
     String& operator=(std::initializer_list<value_type> ilist) noexcept;
 
+    String& operator=(const StringView& other) noexcept;
+
     String& assign(size_type count, value_type ch) noexcept;
 
-    String& assign(const String& str) noexcept;
+    String& assign(const String& other) noexcept;
 
-    String& assign(const String& str, size_type pos,
+    String& assign(const String& other, size_type pos,
             size_type count = npos) noexcept;
 
-    String& assign(String&& str) noexcept;
+    String& assign(String&& other) noexcept;
 
     String& assign(const_pointer s) noexcept;
 
@@ -111,6 +122,8 @@ public:
     String& assign(std::initializer_list<value_type> ilist) noexcept;
 
     String& assign(const_iterator first, const_iterator last) noexcept;
+
+    String& assign(const StringView& other) noexcept;
 
     reference at(size_type pos) noexcept;
 
@@ -221,24 +234,9 @@ public:
 
     ~String() noexcept;
 private:
-    using Function = void(*)(const_pointer src, size_type count,
-            pointer dst);
-
-    static void copy_n(const_pointer src, size_type count,
-            pointer dst) noexcept;
-
-    static void move_n(const_pointer src, size_type count,
-        pointer dst) noexcept;
-
-    static void fill_n(const_pointer src, size_type count,
-            pointer dst) noexcept;
-
-    pointer insert(size_type index, const StringView& str,
-            Function function) noexcept;
-
-    allocator_type* m_allocator{&Allocator::get_instance()};
-    pointer m_data{nullptr};
-    size_type m_size{0};
+    size_type m_size;
+    pointer m_data;
+    allocator_type* m_allocator;
 };
 
 }
