@@ -17,16 +17,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file json/string_view.cpp
+ * @file json/unicode.hpp
  *
- * @brief Implementation
+ * @brief JSON unicode interface
  */
 
-#include "json/string_view.hpp"
+#ifndef JSON_UNICODE_HPP
+#define JSON_UNICODE_HPP
 
-#include <type_traits>
+#include "types.hpp"
 
-using json::StringView;
+namespace json {
 
-static_assert(std::is_standard_layout<StringView>::value,
-        "json::StringView is not a standard layout");
+enum class Unicode : Size {
+    UTF8,
+    UTF16,
+    UTF16BE,
+    UTF16LE,
+    UTF32,
+    UTF32BE,
+    UTF32LE
+};
+
+}
+
+#endif /* JSON_UNICODE_HPP */

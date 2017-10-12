@@ -25,34 +25,30 @@
 #ifndef JSON_STRING_VIEW_HPP
 #define JSON_STRING_VIEW_HPP
 
-#include "span.hpp"
 #include "types.hpp"
+#include "unicode.hpp"
 
 namespace json {
 
-class StringView : public Span<const Char> {
+class StringView {
 public:
-    using Span::Span;
-    using Span::value_type;
-    using Span::difference_type;
-    using Span::pointer;
-    using Span::const_pointer;
-    using Span::reference;
-    using Span::const_reference;
-    using Span::iterator;
-    using Span::const_iterator;
-    using Span::reverse_iterator;
-    using Span::const_reverse_iterator;
 
-    StringView(const Span<const Char>& other) noexcept;
+    
 
-    StringView subspan(size_type pos, size_type count) noexcept;
+private:
+    static constexpr auto UNICODE_BIT_WIDTH{3};
+    static constexpr auto SIZE_BIT_WIDTH{8*sizeof(Size) - UNICODE_BIT_WIDTH};
+
+    struct {
+        Unicode m_unicode : UNICODE_BIT_WIDTH;
+        Size m_size : SIZE_BIT_WIDTH;
+    } m_field;
+    union {
+        char* m_utf8_data;
+        char16_t* m_utf16_data;
+        char32_t* m_utf32_data;
+    };
 };
-
-inline
-StringView::StringView(const Span<const char>& other) noexcept :
-    Span{other}
-{ }
 
 }
 
