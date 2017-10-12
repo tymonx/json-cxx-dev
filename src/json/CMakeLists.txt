@@ -16,20 +16,21 @@ add_subdirectory(allocator)
 add_subdirectory(unicode)
 
 add_library(json-core OBJECT
-    array.cpp
-    array_iterator.cpp
-    object.cpp
-    object_iterator.cpp
-    pair.cpp
-    value.cpp
-    value_iterator.cpp
-    list.cpp
-    number.cpp
-    list_iterator.cpp
-    string.cpp
-    parser.cpp
-    string_view.cpp
-    allocator.cpp
+    #    array.cpp
+    #array_iterator.cpp
+    #object.cpp
+    #object_iterator.cpp
+    #pair.cpp
+    #value.cpp
+    #value_iterator.cpp
+    #list.cpp
+    #number.cpp
+    #list_iterator.cpp
+    #string.cpp
+    #parser.cpp
+    #string_view.cpp
+    #allocator.cpp
+    string_iterator.cpp
 )
 
 if (NOT JSON_ALLOCATOR_TYPE)
