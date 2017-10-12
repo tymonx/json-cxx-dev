@@ -401,8 +401,23 @@ void String::clear() noexcept {
     m_size = 0;
 }
 
-String::~String() noexcept {
-    allocator().deallocate(data());
+auto String::insert(size_type index, size_type count,
+        value_type ch) noexcept -> String& {
+    auto old_size = size();
+    auto new_size = old_size + count;
+    resize(new_size);
+
+    if (size() == new_size) {
+        if (index > old_size) {
+            index = old_size;
+        }
+
+        std::move_backward(data() + index, data() + old_size,
+                data() + new_size);
+        std::fill_n(data() + index, count, ch);
+    }
+
+    return *this;
 }
 
 #if 0
