@@ -53,7 +53,9 @@ static constexpr std::uint32_t SURROGATE_CODE{0x0000D800};
 static constexpr std::uint32_t REPLACEMENT_CHARACTER{0xFFFD};
 static constexpr std::uint32_t UNICODE_MAX{0x10FFFF};
 
-static const std::uint8_t* utf8_data(const void* data) noexcept {
+static constexpr std::uint32_t SMP_BASE{0x100000};
+
+static const std::uint8_t* utf8(const void* data) noexcept {
     return reinterpret_cast<const std::uint8_t*>(data);
 }
 
@@ -61,49 +63,51 @@ static bool is_utf8_next_byte(std::uint8_t ch) noexcept {
     return ((ch & UTF8_NEXT_BYTE_MASK) == UTF8_NEXT_BYTE_CODE);
 }
 
-static bool is_utf8_1_byte(const std::uint8_t* utf8) noexcept {
-    return ((utf8[0] & UTF8_1_BYTE_MASK) == UTF8_1_BYTE_CODE);
+static bool is_utf8_1_byte(const std::uint8_t* code) noexcept {
+    return ((code[0] & UTF8_1_BYTE_MASK) == UTF8_1_BYTE_CODE);
 }
 
-static bool is_utf8_2_bytes(const std::uint8_t* utf8) noexcept {
-    return ((utf8[0] & UTF8_2_BYTES_MASK) == UTF8_2_BYTES_CODE) &&
-        is_utf8_next_byte(utf8[1]);
+static bool is_utf8_2_bytes(const std::uint8_t* code) noexcept {
+    return ((code[0] & UTF8_2_BYTES_MASK) == UTF8_2_BYTES_CODE) &&
+        is_utf8_next_byte(code[1]);
 }
 
-static bool is_utf8_3_bytes(const std::uint8_t* utf8) noexcept {
-    return ((utf8[0] & UTF8_3_BYTES_MASK) == UTF8_3_BYTES_CODE) &&
-        is_utf8_next_byte(utf8[1]) && is_utf8_next_byte(utf8[2]);
+static bool is_utf8_3_bytes(const std::uint8_t* code) noexcept {
+    return ((code[0] & UTF8_3_BYTES_MASK) == UTF8_3_BYTES_CODE) &&
+        is_utf8_next_byte(code[1]) &&
+        is_utf8_next_byte(code[2]);
 }
 
-static bool is_utf8_4_bytes(const std::uint8_t* utf8) noexcept {
-    return ((utf8[0] & UTF8_4_BYTES_MASK) == UTF8_4_BYTES_CODE) &&
-        is_utf8_next_byte(utf8[1]) && is_utf8_next_byte(utf8[2]) &&
-        is_utf8_next_byte(utf8[3]);
+static bool is_utf8_4_bytes(const std::uint8_t* code) noexcept {
+    return ((code[0] & UTF8_4_BYTES_MASK) == UTF8_4_BYTES_CODE) &&
+        is_utf8_next_byte(code[1]) &&
+        is_utf8_next_byte(code[2]) &&
+        is_utf8_next_byte(code[3]);
 }
 
-static std::uint32_t decode_utf8_1_byte(const std::uint8_t* utf8) noexcept {
-    return std::uint32_t(utf8[0]);
+static std::uint32_t decode_utf8_1_byte(const std::uint8_t* code) noexcept {
+    return std::uint32_t(code[0]);
 }
 
-static std::uint32_t decode_utf8_2_bytes(const std::uint8_t* utf8) noexcept {
-    return std::uint32_t((~UTF8_2_BYTES_MASK & utf8[0]) << 6) |
-        std::uint32_t(~UTF8_NEXT_BYTE_MASK & utf8[1]);
+static std::uint32_t decode_utf8_2_bytes(const std::uint8_t* code) noexcept {
+    return std::uint32_t((~UTF8_2_BYTES_MASK & code[0]) << 6) |
+        std::uint32_t(~UTF8_NEXT_BYTE_MASK & code[1]);
 }
 
-static std::uint32_t decode_utf8_3_bytes(const std::uint8_t* utf8) noexcept {
-    return std::uint32_t((~UTF8_3_BYTES_MASK & utf8[0]) << 12) |
-        std::uint32_t((~UTF8_NEXT_BYTE_MASK & utf8[1]) << 6) |
-        std::uint32_t(~UTF8_NEXT_BYTE_MASK & utf8[2]);
+static std::uint32_t decode_utf8_3_bytes(const std::uint8_t* code) noexcept {
+    return std::uint32_t((~UTF8_3_BYTES_MASK & code[0]) << 12) |
+        std::uint32_t((~UTF8_NEXT_BYTE_MASK & code[1]) << 6) |
+        std::uint32_t(~UTF8_NEXT_BYTE_MASK & code[2]);
 }
 
-static std::uint32_t decode_utf8_4_bytes(const std::uint8_t* utf8) noexcept {
-    return std::uint32_t((~UTF8_4_BYTES_MASK & utf8[0]) << 18) |
-        std::uint32_t((~UTF8_NEXT_BYTE_MASK & utf8[1]) << 12) |
-        std::uint32_t((~UTF8_NEXT_BYTE_MASK & utf8[2]) << 6) |
-        std::uint32_t(~UTF8_NEXT_BYTE_MASK & utf8[3]);
+static std::uint32_t decode_utf8_4_bytes(const std::uint8_t* code) noexcept {
+    return std::uint32_t((~UTF8_4_BYTES_MASK & code[0]) << 18) |
+        std::uint32_t((~UTF8_NEXT_BYTE_MASK & code[1]) << 12) |
+        std::uint32_t((~UTF8_NEXT_BYTE_MASK & code[2]) << 6) |
+        std::uint32_t(~UTF8_NEXT_BYTE_MASK & code[3]);
 }
 
-static const std::uint16_t* utf16_data(const void* data) noexcept {
+static const std::uint16_t* utf16(const void* data) noexcept {
     return reinterpret_cast<const std::uint16_t*>(data);
 }
 
@@ -119,30 +123,30 @@ static bool is_utf16_low_surrogate(std::uint16_t ch) noexcept {
     return ((ch & UTF16_LOW_SURROGATE_MASK) == UTF16_LOW_SURROGATE_CODE);
 }
 
-static bool is_utf16_surrogate(const std::uint16_t* utf16) noexcept {
-    return is_utf16_high_surrogate(*utf16++) && is_utf16_low_surrogate(*utf16);
+static bool is_utf16_surrogate(const std::uint16_t* code) noexcept {
+    return is_utf16_high_surrogate(code[0]) && is_utf16_low_surrogate(code[1]);
 }
 
-static bool is_utf16le_surrogate(const std::uint16_t* utf16) noexcept {
-    return is_utf16_high_surrogate(utf16_swap(*utf16++)) &&
-        is_utf16_low_surrogate(utf16_swap(*utf16));
+static bool is_utf16le_surrogate(const std::uint16_t* code) noexcept {
+    return is_utf16_high_surrogate(utf16_swap(code[0])) &&
+        is_utf16_low_surrogate(utf16_swap(code[1]));
 }
 
 static std::uint32_t decode_utf16_surrogate(
-        const std::uint16_t* utf16) noexcept {
-    return 0x100000 |
-        std::uint32_t((utf16[0] - UTF16_HIGH_SURROGATE_CODE) << 10) |
-        std::uint32_t(utf16[1] - UTF16_LOW_SURROGATE_CODE);
+        const std::uint16_t* code) noexcept {
+    return SMP_BASE | std::uint32_t((code[0] -
+                UTF16_HIGH_SURROGATE_CODE) << 10) |
+        std::uint32_t(code[1] - UTF16_LOW_SURROGATE_CODE);
 }
 
 static std::uint32_t decode_utf16le_surrogate(
-        const std::uint16_t* utf16) noexcept {
-    return 0x100000 | std::uint32_t((utf16_swap(utf16[0]) -
+        const std::uint16_t* code) noexcept {
+    return SMP_BASE | ((std::uint32_t(utf16_swap(code[0])) -
                 UTF16_HIGH_SURROGATE_CODE) << 10) |
-        std::uint32_t(utf16_swap(utf16[1]) - UTF16_LOW_SURROGATE_CODE);
+        (std::uint32_t(utf16_swap(code[1])) - UTF16_LOW_SURROGATE_CODE);
 }
 
-static const std::uint32_t* utf32_data(const void* data) noexcept {
+static const std::uint32_t* utf32(const void* data) noexcept {
     return reinterpret_cast<const std::uint32_t*>(data);
 }
 
@@ -151,16 +155,12 @@ static std::uint32_t utf32_swap(std::uint32_t ch) noexcept {
         ((ch << 8) & 0xFF0000) | ((ch >> 8) & 0xFF00);
 }
 
-static bool is_surrogate(std::uint32_t ch) noexcept {
-    return ((ch & SURROGATE_MASK) == SURROGATE_CODE);
-}
-
 static bool is_valid(std::uint32_t ch) noexcept {
-    return !is_surrogate(ch) && (ch < UNICODE_MAX);
+    return ((ch & SURROGATE_MASK) != SURROGATE_CODE) && (ch < UNICODE_MAX);
 }
 
 StringIterator::StringIterator() noexcept :
-    m_unicode{},
+    m_unicode{Unicode::UTF8},
     m_data{nullptr}
 { }
 
@@ -195,56 +195,47 @@ auto StringIterator::operator=(
 
 auto StringIterator::operator++() noexcept -> StringIterator& {
     switch (m_unicode) {
-    case Unicode::UTF8: {
-        auto utf8 = utf8_data(m_data);
-
-        if (is_utf8_1_byte(utf8)) {
-            m_data = utf8 + 1;
+    case Unicode::UTF8:
+        if (is_utf8_1_byte(utf8(m_data))) {
+            m_data = utf8(m_data) + 1;
         }
-        else if (is_utf8_2_bytes(utf8)) {
-            m_data = utf8 + 2;
+        else if (is_utf8_2_bytes(utf8(m_data))) {
+            m_data = utf8(m_data) + 2;
         }
-        else if (is_utf8_3_bytes(utf8)) {
-            m_data = utf8 + 3;
+        else if (is_utf8_3_bytes(utf8(m_data))) {
+            m_data = utf8(m_data) + 3;
         }
-        else if (is_utf8_4_bytes(utf8)) {
-            m_data = utf8 + 4;
+        else if (is_utf8_4_bytes(utf8(m_data))) {
+            m_data = utf8(m_data) + 4;
         }
         else {
-            m_data = utf8 + 1;
+            m_data = utf8(m_data) + 1;
         }
 
         break;
-    }
     case Unicode::UTF16:
-    case Unicode::UTF16BE: {
-        auto utf16 = utf16_data(m_data);
-
-        if (is_utf16_surrogate(utf16)) {
-            m_data = utf16 + 2;
+    case Unicode::UTF16BE:
+        if (is_utf16_surrogate(utf16(m_data))) {
+            m_data = utf16(m_data) + 2;
         }
         else {
-            m_data = utf16 + 1;
+            m_data = utf16(m_data) + 1;
         }
 
         break;
-    }
-    case Unicode::UTF16LE: {
-        auto utf16 = utf16_data(m_data);
-
-        if (is_utf16le_surrogate(utf16)) {
-            m_data = utf16 + 2;
+    case Unicode::UTF16LE:
+        if (is_utf16le_surrogate(utf16(m_data))) {
+            m_data = utf16(m_data) + 2;
         }
         else {
-            m_data = utf16 + 1;
+            m_data = utf16(m_data) + 1;
         }
 
         break;
-    }
     case Unicode::UTF32:
     case Unicode::UTF32BE:
     case Unicode::UTF32LE:
-        m_data = utf32_data(m_data) + 1;
+        m_data = utf32(m_data) + 1;
         break;
     default:
         break;
@@ -261,56 +252,47 @@ auto StringIterator::operator++(int) noexcept -> StringIterator {
 
 auto StringIterator::operator--() noexcept -> StringIterator& {
     switch (m_unicode) {
-    case Unicode::UTF8: {
-        auto utf8 = utf8_data(m_data);
-
-        if (is_utf8_1_byte(utf8 - 1)) {
-            m_data = utf8 - 1;
+    case Unicode::UTF8:
+        if (is_utf8_1_byte(utf8(m_data) - 1)) {
+            m_data = utf8(m_data) - 1;
         }
-        else if (is_utf8_2_bytes(utf8 - 2)) {
-            m_data = utf8 - 2;
+        else if (is_utf8_2_bytes(utf8(m_data) - 2)) {
+            m_data = utf8(m_data) - 2;
         }
-        else if (is_utf8_3_bytes(utf8 - 3)) {
-            m_data = utf8 - 3;
+        else if (is_utf8_3_bytes(utf8(m_data) - 3)) {
+            m_data = utf8(m_data) - 3;
         }
-        else if (is_utf8_4_bytes(utf8 - 4)) {
-            m_data = utf8 - 4;
+        else if (is_utf8_4_bytes(utf8(m_data) - 4)) {
+            m_data = utf8(m_data) - 4;
         }
         else {
-            m_data = utf8 - 1;
+            m_data = utf8(m_data) - 1;
         }
 
         break;
-    }
     case Unicode::UTF16:
-    case Unicode::UTF16BE: {
-        auto utf16 = utf16_data(m_data);
-
-        if (is_utf16_surrogate(utf16 - 2)) {
-            m_data = utf16 - 2;
+    case Unicode::UTF16BE:
+        if (is_utf16_surrogate(utf16(m_data) - 2)) {
+            m_data = utf16(m_data) - 2;
         }
         else {
-            m_data = utf16 - 1;
+            m_data = utf16(m_data) - 1;
         }
 
         break;
-    }
-    case Unicode::UTF16LE: {
-        auto utf16 = utf16_data(m_data);
-
-        if (is_utf16le_surrogate(utf16 - 2)) {
-            m_data = utf16 - 2;
+    case Unicode::UTF16LE:
+        if (is_utf16le_surrogate(utf16(m_data) - 2)) {
+            m_data = utf16(m_data) - 2;
         }
         else {
-            m_data = utf16 - 1;
+            m_data = utf16(m_data) - 1;
         }
 
         break;
-    }
     case Unicode::UTF32:
     case Unicode::UTF32BE:
     case Unicode::UTF32LE:
-        m_data = utf32_data(m_data) - 1;
+        m_data = utf32(m_data) - 1;
         break;
     default:
         break;
@@ -362,92 +344,115 @@ auto StringIterator::operator[](
 }
 
 auto StringIterator::operator*() const noexcept -> value_type {
-    value_type value = REPLACEMENT_CHARACTER;
+    value_type value;
 
     switch (m_unicode) {
-    case Unicode::UTF8: {
-        auto utf8 = utf8_data(m_data);
-
-        if (is_utf8_1_byte(utf8)) {
-            value = decode_utf8_1_byte(utf8);
+    case Unicode::UTF8:
+        if (is_utf8_1_byte(utf8(m_data))) {
+            value = decode_utf8_1_byte(utf8(m_data));
         }
-        else if (is_utf8_2_bytes(utf8)) {
-            value = decode_utf8_2_bytes(utf8);
+        else if (is_utf8_2_bytes(utf8(m_data))) {
+            value = decode_utf8_2_bytes(utf8(m_data));
         }
-        else if (is_utf8_3_bytes(utf8)) {
-            value = decode_utf8_3_bytes(utf8);
-
-            if (is_surrogate(value)) {
-                value = REPLACEMENT_CHARACTER;
-            }
+        else if (is_utf8_3_bytes(utf8(m_data))) {
+            value = decode_utf8_3_bytes(utf8(m_data));
         }
-        else if (is_utf8_4_bytes(utf8)) {
-            value = decode_utf8_4_bytes(utf8);
-
-            if (!is_valid(value)) {
-                value = REPLACEMENT_CHARACTER;
-            }
+        else if (is_utf8_4_bytes(utf8(m_data))) {
+            value = decode_utf8_4_bytes(utf8(m_data));
+        }
+        else {
+            value = REPLACEMENT_CHARACTER;
         }
 
         break;
-    }
     case Unicode::UTF16:
-    case Unicode::UTF16BE: {
-        auto utf16 = utf16_data(m_data);
-        value = *utf16;
-
-        if (is_surrogate(value)) {
-            if (is_utf16_surrogate(utf16)) {
-                value = decode_utf16_surrogate(utf16);
-            }
-            else {
-                value = REPLACEMENT_CHARACTER;
-            }
+    case Unicode::UTF16BE:
+        if (is_utf16_surrogate(utf16(m_data))) {
+            value = decode_utf16_surrogate(utf16(m_data));
+        }
+        else {
+            value = *utf16(m_data);
         }
 
         break;
-    }
-    case Unicode::UTF16LE: {
-        auto utf16 = utf16_data(m_data);
-        value = utf16_swap(*utf16);
-
-        if (is_surrogate(value)) {
-            if (is_utf16le_surrogate(utf16)) {
-                value = decode_utf16le_surrogate(utf16);
-            }
-            else {
-                value = REPLACEMENT_CHARACTER;
-            }
+    case Unicode::UTF16LE:
+        if (is_utf16le_surrogate(utf16(m_data))) {
+            value = decode_utf16le_surrogate(utf16(m_data));
+        }
+        else {
+            value = utf16_swap(*utf16(m_data));
         }
 
         break;
-    }
     case Unicode::UTF32:
     case Unicode::UTF32BE:
-        value = *utf32_data(m_data);
-
-        if (!is_valid(value)) {
-            value = REPLACEMENT_CHARACTER;
-        }
-
+        value = *utf32(m_data);
         break;
     case Unicode::UTF32LE:
-        value = utf32_swap(*utf32_data(m_data));
-
-        if (!is_valid(value)) {
-            value = REPLACEMENT_CHARACTER;
-        }
-
+        value = utf32_swap(*utf32(m_data));
         break;
     default:
+        value = REPLACEMENT_CHARACTER;
         break;
+    }
+
+    if (!is_valid(value)) {
+        value = REPLACEMENT_CHARACTER;
     }
 
     return value;
 }
 
+auto StringIterator::base() const noexcept -> const void* {
+    return m_data;
+}
+
 StringIterator::operator bool() const noexcept {
     return (nullptr != m_data);
+}
+
+StringIterator::operator Unicode() const noexcept {
+    return m_unicode;
+}
+
+bool StringIterator::operator<(const StringIterator& other) const noexcept {
+    return base() < other.base();
+}
+
+bool StringIterator::operator<=(const StringIterator& other) const noexcept {
+    return base() <= other.base();
+}
+
+bool StringIterator::operator>(const StringIterator& other) const noexcept {
+    return base() > other.base();
+}
+
+bool StringIterator::operator>=(const StringIterator& other) const noexcept {
+    return base() >= other.base();
+}
+
+bool StringIterator::operator==(const StringIterator& other) const noexcept {
+    return base() == other.base();
+}
+
+bool StringIterator::operator!=(const StringIterator& other) const noexcept {
+    return base() != other.base();
+}
+
+bool StringIterator::operator==(Unicode unicode) const noexcept {
+    return m_unicode == unicode;
+}
+
+bool StringIterator::operator!=(Unicode unicode) const noexcept {
+    return m_unicode != unicode;
+}
+
+bool json::operator==(Unicode unicode, const StringIterator& it) noexcept {
+    return (it == unicode);
+}
+
+bool json::operator!=(Unicode unicode, const StringIterator& it) noexcept {
+    return (it != unicode);
 }
 
 StringIterator::~StringIterator() noexcept { }

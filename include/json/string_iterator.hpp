@@ -90,9 +90,27 @@ public:
 
     value_type operator*() const noexcept;
 
+    const void* base() const noexcept;
+
     operator bool() const noexcept;
 
     operator Unicode() const noexcept;
+
+    bool operator<(const StringIterator& other) const noexcept;
+
+    bool operator<=(const StringIterator& other) const noexcept;
+
+    bool operator>(const StringIterator& other) const noexcept;
+
+    bool operator>=(const StringIterator& other) const noexcept;
+
+    bool operator==(const StringIterator& other) const noexcept;
+
+    bool operator!=(const StringIterator& other) const noexcept;
+
+    bool operator==(Unicode unicode) const noexcept;
+
+    bool operator!=(Unicode unicode) const noexcept;
 
     ~StringIterator() noexcept;
 private:
@@ -114,6 +132,10 @@ template<typename T, StringIterator::enable_utf32<T>>
 StringIterator::StringIterator(const T* data) noexcept :
     StringIterator{Unicode::UTF32, data}
 { }
+
+bool operator==(Unicode unicode, const StringIterator& it) noexcept;
+
+bool operator!=(Unicode unicode, const StringIterator& it) noexcept;
 
 }
 
