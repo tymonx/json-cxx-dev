@@ -27,4 +27,5 @@ function (add_json_test target_name)
     endif()
 endfunction()
 
-add_json_test(string)
+#add_json_test(string)
+add_json_test(string_view)

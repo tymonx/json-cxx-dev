@@ -53,10 +53,10 @@ install(DIRECTORY include/json DESTINATION include FILES_MATCHING PATTERN "*.hpp
 add_subdirectory(src)
 
 if (EXAMPLES)
-    add_subdirectory(examples)
+    #add_subdirectory(examples)
 endif()
 
 if (TESTS)
-    #enable_testing()
-    #add_subdirectory(tests)
+    enable_testing()
+    add_subdirectory(tests)
 endif()

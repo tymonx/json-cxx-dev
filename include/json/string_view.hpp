@@ -27,28 +27,165 @@
 
 #include "types.hpp"
 #include "unicode.hpp"
+#include "string_iterator.hpp"
+#include "string_reverse_iterator.hpp"
+
+#include <type_traits>
 
 namespace json {
 
 class StringView {
 public:
+    using value_type = char32_t;
+    using size_type = Size;
+    using iterator = StringIterator;
+    using reverse_iterator = StringReverseIterator;
+    using difference_type = Difference;
 
-    
+    template<typename T, Size N>
+    using enable_utf = typename std::enable_if<(sizeof(T) == (N/8)), int>::type;
 
+    static const size_type npos;
+
+    StringView() noexcept;
+
+    template<typename T, enable_utf<T, 8> = 0>
+    StringView(const T* data) noexcept;
+
+    template<typename T, enable_utf<T, 8> = 0>
+    StringView(const T* data, size_type count) noexcept;
+
+    template<typename T, enable_utf<T, 16> = 0>
+    StringView(const T* data) noexcept;
+
+    template<typename T, enable_utf<T, 16> = 0>
+    StringView(const T* data, size_type count) noexcept;
+
+    template<typename T, enable_utf<T, 32> = 0>
+    StringView(const T* data) noexcept;
+
+    template<typename T, enable_utf<T, 32> = 0>
+    StringView(const T* data, size_type count) noexcept;
+
+    StringView(const void* str) noexcept;
+
+    StringView(Unicode code, const void* str) noexcept;
+
+    StringView(const void* str, size_type count) noexcept;
+
+    StringView(Unicode code, const void* str, size_type count) noexcept;
+
+    StringView(iterator first, iterator last) noexcept;
+
+    StringView(StringView&& other) noexcept;
+
+    StringView(const StringView& other) noexcept;
+
+    StringView& operator=(StringView&& other) noexcept;
+
+    StringView& operator=(const StringView& other) noexcept;
+
+    bool empty() const noexcept;
+
+    size_type size() const noexcept;
+
+    size_type length() const noexcept;
+
+    size_type max_size() const noexcept;
+
+    Unicode unicode() const noexcept;
+
+    value_type at(difference_type n) const noexcept;
+
+    value_type operator[](difference_type n) const noexcept;
+
+    value_type front() const noexcept;
+
+    value_type back() const noexcept;
+
+    iterator begin() const noexcept;
+
+    iterator cbegin() const noexcept;
+
+    iterator end() const noexcept;
+
+    iterator cend() const noexcept;
+
+    reverse_iterator rbegin() const noexcept;
+
+    reverse_iterator crbegin() const noexcept;
+
+    reverse_iterator rend() const noexcept;
+
+    reverse_iterator crend() const noexcept;
+
+    StringView substr(size_type pos = 0, size_type count = npos) const noexcept;
+
+    size_type copy(void* dest) const noexcept;
+
+    int compare(const StringView& other) const noexcept;
+
+    void remove_prefix(size_type count) noexcept;
+
+    void remove_suffix(size_type count) noexcept;
+
+    void swap(StringView& other) noexcept;
+
+    size_type find(const StringView& other, size_type pos = 0) const noexcept;
+
+    bool operator<(const StringView& other) const noexcept;
+
+    bool operator<=(const StringView& other) const noexcept;
+
+    bool operator>(const StringView& other) const noexcept;
+
+    bool operator>=(const StringView& other) const noexcept;
+
+    bool operator==(const StringView& other) const noexcept;
+
+    bool operator!=(const StringView& other) const noexcept;
+
+    ~StringView() noexcept;
 private:
-    static constexpr auto UNICODE_BIT_WIDTH{3};
-    static constexpr auto SIZE_BIT_WIDTH{8*sizeof(Size) - UNICODE_BIT_WIDTH};
+    static constexpr auto UNICODE_WIDTH{3};
+    static constexpr auto SIZE_WIDTH{8*sizeof(size_type) - UNICODE_WIDTH};
 
-    struct {
-        Unicode m_unicode : UNICODE_BIT_WIDTH;
-        Size m_size : SIZE_BIT_WIDTH;
-    } m_field;
-    union {
-        char* m_utf8_data;
-        char16_t* m_utf16_data;
-        char32_t* m_utf32_data;
-    };
+    struct Fields {
+        size_type m_unicode : UNICODE_WIDTH;
+        size_type m_size : SIZE_WIDTH;
+    } m_fields;
+    const void* m_data;
 };
+
+template<typename T, StringView::enable_utf<T, 8>>
+StringView::StringView(const T* data) noexcept :
+    StringView{Unicode::UTF8, data}
+{ }
+
+template<typename T, StringView::enable_utf<T, 8>>
+StringView::StringView(const T* data, size_type count) noexcept :
+    StringView{Unicode::UTF8, data, count}
+{ }
+
+template<typename T, StringView::enable_utf<T, 16>>
+StringView::StringView(const T* data) noexcept :
+    StringView{Unicode::UTF16, data}
+{ }
+
+template<typename T, StringView::enable_utf<T, 16>>
+StringView::StringView(const T* data, size_type count) noexcept :
+    StringView{Unicode::UTF16, data, count}
+{ }
+
+template<typename T, StringView::enable_utf<T, 32>>
+StringView::StringView(const T* data) noexcept :
+    StringView{Unicode::UTF32, data}
+{ }
+
+template<typename T, StringView::enable_utf<T, 32>>
+StringView::StringView(const T* data, size_type count) noexcept :
+    StringView{Unicode::UTF32, data, count}
+{ }
 
 }
 

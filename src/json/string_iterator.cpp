@@ -24,7 +24,13 @@
 
 #include "json/string_iterator.hpp"
 
+#include <cstdint>
+#include <type_traits>
+
 using json::StringIterator;
+
+static_assert(std::is_standard_layout<StringIterator>::value,
+        "json::StringIterator is not a standard layout");
 
 static constexpr std::uint8_t UTF8_1_BYTE_MASK{0x80};
 static constexpr std::uint8_t UTF8_1_BYTE_CODE{0x00};
@@ -158,11 +164,6 @@ static std::uint32_t utf32_swap(std::uint32_t ch) noexcept {
 static bool is_valid(std::uint32_t ch) noexcept {
     return ((ch & SURROGATE_MASK) != SURROGATE_CODE) && (ch < UNICODE_MAX);
 }
-
-StringIterator::StringIterator() noexcept :
-    m_unicode{Unicode::UTF8},
-    m_data{nullptr}
-{ }
 
 StringIterator::StringIterator(Unicode unicode, const void* data) noexcept :
     m_unicode{unicode},
@@ -403,16 +404,16 @@ auto StringIterator::operator*() const noexcept -> value_type {
     return value;
 }
 
+auto StringIterator::unicode() const noexcept -> Unicode {
+    return m_unicode;
+}
+
 auto StringIterator::base() const noexcept -> const void* {
     return m_data;
 }
 
 StringIterator::operator bool() const noexcept {
     return (nullptr != m_data);
-}
-
-StringIterator::operator Unicode() const noexcept {
-    return m_unicode;
 }
 
 bool StringIterator::operator<(const StringIterator& other) const noexcept {
@@ -437,22 +438,6 @@ bool StringIterator::operator==(const StringIterator& other) const noexcept {
 
 bool StringIterator::operator!=(const StringIterator& other) const noexcept {
     return base() != other.base();
-}
-
-bool StringIterator::operator==(Unicode unicode) const noexcept {
-    return m_unicode == unicode;
-}
-
-bool StringIterator::operator!=(Unicode unicode) const noexcept {
-    return m_unicode != unicode;
-}
-
-bool json::operator==(Unicode unicode, const StringIterator& it) noexcept {
-    return (it == unicode);
-}
-
-bool json::operator!=(Unicode unicode, const StringIterator& it) noexcept {
-    return (it != unicode);
 }
 
 StringIterator::~StringIterator() noexcept { }

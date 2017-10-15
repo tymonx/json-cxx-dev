@@ -17,9 +17,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *
- * @file json/utf8_iterator.hpp
+ * @file json/string_iterator.hpp
  *
- * @brief JSON UTF-8 iterator interface
+ * @brief JSON string iterator interface
  */
 
 #ifndef JSON_STRING_ITERATOR_HPP
@@ -28,39 +28,19 @@
 #include "types.hpp"
 #include "unicode.hpp"
 
-#include <type_traits>
+#include <iterator>
 
 namespace json {
 
 class StringIterator {
 public:
     using value_type = char32_t;
+    using pointer = const value_type*;
+    using reference = const value_type&;
     using difference_type = Difference;
+    using iterator_category = std::random_access_iterator_tag;
 
-    template<typename T>
-    using enable_utf8 = typename std::enable_if<
-        (sizeof(T) == 1), char>::type;
-
-    template<typename T>
-    using enable_utf16 = typename std::enable_if<
-        (sizeof(T) == 2), char16_t>::type;
-
-    template<typename T>
-    using enable_utf32 = typename std::enable_if<
-        (sizeof(T) == 4), char32_t>::type;
-
-    StringIterator() noexcept;
-
-    StringIterator(Unicode unicode, const void* data) noexcept;
-
-    template<typename T, enable_utf8<T> = 0>
-    StringIterator(const T* data) noexcept;
-
-    template<typename T, enable_utf16<T> = 0>
-    StringIterator(const T* data) noexcept;
-
-    template<typename T, enable_utf32<T> = 0>
-    StringIterator(const T* data) noexcept;
+    StringIterator(Unicode code, const void* data) noexcept;
 
     StringIterator(StringIterator&& other) noexcept;
 
@@ -90,11 +70,11 @@ public:
 
     value_type operator*() const noexcept;
 
+    Unicode unicode() const noexcept;
+
     const void* base() const noexcept;
 
     operator bool() const noexcept;
-
-    operator Unicode() const noexcept;
 
     bool operator<(const StringIterator& other) const noexcept;
 
@@ -108,34 +88,11 @@ public:
 
     bool operator!=(const StringIterator& other) const noexcept;
 
-    bool operator==(Unicode unicode) const noexcept;
-
-    bool operator!=(Unicode unicode) const noexcept;
-
     ~StringIterator() noexcept;
 private:
     Unicode m_unicode;
     const void* m_data;
 };
-
-template<typename T, StringIterator::enable_utf8<T>>
-StringIterator::StringIterator(const T* data) noexcept :
-    StringIterator{Unicode::UTF8, data}
-{ }
-
-template<typename T, StringIterator::enable_utf16<T>>
-StringIterator::StringIterator(const T* data) noexcept :
-    StringIterator{Unicode::UTF16, data}
-{ }
-
-template<typename T, StringIterator::enable_utf32<T>>
-StringIterator::StringIterator(const T* data) noexcept :
-    StringIterator{Unicode::UTF32, data}
-{ }
-
-bool operator==(Unicode unicode, const StringIterator& it) noexcept;
-
-bool operator!=(Unicode unicode, const StringIterator& it) noexcept;
 
 }
 
