@@ -25,8 +25,7 @@
 #ifndef JSON_STRING_VIEW_HPP
 #define JSON_STRING_VIEW_HPP
 
-#include "types.hpp"
-#include "unicode.hpp"
+#include "string_base.hpp"
 #include "string_iterator.hpp"
 #include "string_reverse_iterator.hpp"
 
@@ -147,14 +146,7 @@ public:
 
     ~StringView() noexcept;
 private:
-    static constexpr auto UNICODE_WIDTH{3};
-    static constexpr auto SIZE_WIDTH{8*sizeof(size_type) - UNICODE_WIDTH};
-
-    struct Fields {
-        size_type m_unicode : UNICODE_WIDTH;
-        size_type m_size : SIZE_WIDTH;
-    } m_fields;
-    const void* m_data;
+    StringBase m_base;
 };
 
 template<typename T, StringView::enable_utf<T, 8>>

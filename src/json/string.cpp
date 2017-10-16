@@ -44,8 +44,7 @@ String::String() noexcept :
 { }
 
 String::String(allocator_type& alloc) noexcept :
-    m_size{0},
-    m_data{nullptr},
+    m_base{},
     m_allocator{&alloc}
 { }
 
@@ -58,30 +57,26 @@ String::String(const String& other, allocator_type& alloc) noexcept :
 { }
 
 String::String(String&& other) noexcept :
-    m_size{other.size()},
-    m_data{other.data()},
+    m_base{other.m_base},
     m_allocator{&other.allocator()}
 {
-    other.m_size = 0;
-    other.m_data = nullptr;
+    other.m_base = nullptr;
 }
 
 String::String(String&& other, allocator_type& alloc) noexcept :
-    m_size{other.size()},
-    m_data{other.data()},
+    m_base{other.m_base},
     m_allocator{&other.allocator()}
 {
     if (&other.allocator() == &alloc) {
-        other.m_size = 0;
-        other.m_data = nullptr;
+        other.m_base = nullptr;
     }
     else {
-        m_data = allocator().allocate<value_type>(other.size());
+        m_base = allocator().allocate<value_type>(other.size());
         if (data()) {
             std::copy_n(other.data(), other.size(), data());
         }
         else {
-            m_size = 0;
+            m_base = size_type(0);
         }
     }
 }
@@ -91,16 +86,15 @@ String::String(size_type count, value_type ch) noexcept :
 { }
 
 String::String(size_type count, value_type ch, allocator_type& alloc) noexcept :
-    m_size{count},
-    m_data{nullptr},
+    m_base{Unicode::UTF8, nullptr, count},
     m_allocator{&alloc}
 {
-    m_data = allocator().allocate<value_type>(count);
+    m_base = allocator().allocate<value_type>(count);
     if (data()) {
         std::fill_n(data(), count, ch);
     }
     else {
-        m_size = 0;
+        m_base = size_type(0);
     }
 }
 
@@ -121,11 +115,11 @@ String::String(const_pointer s, size_type count,
     String{StringView{s, count}, alloc}
 { }
 
-String::String(const_iterator first, const_iterator last) noexcept :
+String::String(iterator first, iterator last) noexcept :
     String{first, last, Allocator::get_instance()}
 { }
 
-String::String(const_iterator first, const_iterator last,
+String::String(iterator first, iterator last,
         allocator_type& alloc) noexcept :
     String{StringView{first, last}, alloc}
 { }
@@ -153,16 +147,15 @@ String::String(const StringView& other) noexcept :
 { }
 
 String::String(const StringView& other, allocator_type& alloc) noexcept :
-    m_size{other.size()},
-    m_data{nullptr},
+    m_base{other.unicode(), nullptr, other.size()},
     m_allocator{&alloc}
 {
-    m_data = allocator().allocate<value_type>(other.size());
+    m_base = allocator().allocate<value_type>(other.size());
     if (data()) {
-        std::copy_n(other.data(), other.size(), data());
+        //std::copy_n(other.data(), other.size(), data());
     }
     else {
-        m_size = 0;
+        m_base = size_type(0);
     }
 }
 
@@ -209,11 +202,8 @@ auto String::assign(const String& other, size_type pos,
 auto String::assign(String&& other) noexcept -> String& {
     if (&other != this) {
         if (&other.allocator() == &allocator()) {
-            m_size = other.size();
-            m_data = other.data();
-
-            other.m_size = 0;
-            other.m_data = nullptr;
+            m_base = other.m_base;
+            m_base = nullptr;
         }
         else {
             assign(static_cast<const String&>(other));
@@ -235,8 +225,8 @@ auto String::assign(
     return assign(ilist.begin(), ilist.size());
 }
 
-auto String::assign(const_iterator first,
-        const_iterator last) noexcept -> String& {
+auto String::assign(iterator first,
+        iterator last) noexcept -> String& {
     return assign(StringView{first, last});
 }
 
@@ -273,11 +263,11 @@ auto String::back() const noexcept -> const_reference {
 }
 
 auto String::data() noexcept -> pointer {
-    return m_data;
+    return m_base;
 }
 
 auto String::data() const noexcept -> const_pointer {
-    return m_data;
+    return m_base;
 }
 
 auto String::c_str() noexcept -> const_pointer {
@@ -290,8 +280,9 @@ auto String::c_str() noexcept -> const_pointer {
         else {
             str = allocator().reallocate<value_type>(data(), size() + 1);
             if (str) {
-                m_data = const_cast<pointer>(str);
-                m_data[m_size++] = '\0';
+                m_base = const_cast<pointer>(str);
+                //m_base[size()] = '\0';
+                m_base = m_base.size() + 1;
             }
             else {
                 str = EMPTY_STRING;
@@ -306,11 +297,11 @@ auto String::begin() noexcept -> iterator {
     return data();
 }
 
-auto String::begin() const noexcept -> const_iterator {
+auto String::begin() const noexcept -> iterator {
     return data();
 }
 
-auto String::cbegin() const noexcept -> const_iterator {
+auto String::cbegin() const noexcept -> iterator {
     return data();
 }
 
@@ -318,11 +309,11 @@ auto String::end() noexcept -> iterator {
     return data() + size();
 }
 
-auto String::end() const noexcept -> const_iterator {
+auto String::end() const noexcept -> iterator {
     return data() + size();
 }
 
-auto String::cend() const noexcept -> const_iterator {
+auto String::cend() const noexcept -> iterator {
     return data() + size();
 }
 
@@ -330,31 +321,31 @@ auto String::rbegin() noexcept -> reverse_iterator {
     return reverse_iterator{data() + size() - 1};
 }
 
-auto String::rbegin() const noexcept -> const_reverse_iterator {
-    return const_reverse_iterator{data() + size() - 1};
+auto String::rbegin() const noexcept -> reverse_iterator {
+    return reverse_iterator{data() + size() - 1};
 }
 
-auto String::crbegin() const noexcept -> const_reverse_iterator {
-    return const_reverse_iterator{data() + size() - 1};
+auto String::crbegin() const noexcept -> reverse_iterator {
+    return reverse_iterator{data() + size() - 1};
 }
 
 auto String::rend() noexcept -> reverse_iterator {
     return reverse_iterator{data() - 1};
 }
 
-auto String::rend() const noexcept -> const_reverse_iterator {
-    return const_reverse_iterator{data() - 1};
+auto String::rend() const noexcept -> reverse_iterator {
+    return reverse_iterator{data() - 1};
 }
 
-auto String::crend() const noexcept -> const_reverse_iterator {
-    return const_reverse_iterator{data() - 1};
+auto String::crend() const noexcept -> reverse_iterator {
+    return reverse_iterator{data() - 1};
 }
 
 void String::shrink_to_fit() noexcept {
     if (capacity() > size()) {
         auto ptr = allocator().reallocate(data(), size());
         if (ptr) {
-            m_data = ptr;
+            m_base = ptr;
         }
     }
 }
@@ -363,7 +354,7 @@ void String::reserve(size_type new_capacity) noexcept {
     if (capacity() < new_capacity) {
         auto ptr = allocator().reallocate(data(), new_capacity);
         if (ptr) {
-            m_data = ptr;
+            m_base = ptr;
         }
     }
 }
@@ -377,11 +368,11 @@ auto String::empty() const noexcept -> bool {
 }
 
 auto String::size() const noexcept -> size_type {
-    return m_size;
+    return m_base.size();
 }
 
 auto String::length() const noexcept -> size_type {
-    return m_size;
+    return m_base.size();
 }
 
 auto String::length(const_pointer s) noexcept -> size_type {
@@ -398,7 +389,7 @@ auto String::length(const_pointer s) noexcept -> size_type {
 }
 
 void String::clear() noexcept {
-    m_size = 0;
+    m_base = size_type(0);
 }
 
 auto String::insert(size_type index, size_type count,
@@ -433,22 +424,22 @@ String& insert(size_type index, const String& str) noexcept;
 String& insert(size_type index, const String& str,
         size_type index_str, size_type count = npos) noexcept;
 
-iterator insert(const_iterator pos, size_type count,
+iterator insert(iterator pos, size_type count,
         value_type ch) noexcept;
 
-String& insert(const_iterator pos,
+String& insert(iterator pos,
         std::initializer_list<value_type> ilist) noexcept;
 
-iterator insert(const_iterator pos, value_type ch) noexcept;
+iterator insert(iterator pos, value_type ch) noexcept;
 
-iterator insert(const_iterator pos, const_iterator first,
-        const_iterator last) noexcept;
+iterator insert(iterator pos, iterator first,
+        iterator last) noexcept;
 
 String& erase(size_type index = 0, size_type count = npos) noexcept;
 
-iterator erase(const_iterator position) noexcept;
+iterator erase(iterator position) noexcept;
 
-iterator erase(const_iterator first, const_iterator last) noexcept;
+iterator erase(iterator first, iterator last) noexcept;
 
 void String::resize(size_type count) noexcept {
 
@@ -660,8 +651,8 @@ String::const_pointer String::c_str() noexcept {
     return str;
 }
 
-auto String::erase(const_iterator first,
-        const_iterator last) noexcept -> iterator {
+auto String::erase(iterator first,
+        iterator last) noexcept -> iterator {
     return {};
 }
 
@@ -733,8 +724,8 @@ auto String::assign(std::initializer_list<value_type> ilist) noexcept ->
     return assign(ilist.begin(), ilist.size());
 }
 
-auto String::assign(const_iterator first,
-        const_iterator last) noexcept -> String& {
+auto String::assign(iterator first,
+        iterator last) noexcept -> String& {
     clear();
     insert(0, StringView{first, last}, copy_n);
     return *this;
@@ -784,11 +775,11 @@ auto String::begin() noexcept -> iterator {
     return m_data;
 }
 
-auto String::begin() const noexcept -> const_iterator {
+auto String::begin() const noexcept -> iterator {
     return m_data;
 }
 
-auto String::cbegin() const noexcept -> const_iterator {
+auto String::cbegin() const noexcept -> iterator {
     return m_data;
 }
 
@@ -796,11 +787,11 @@ auto String::end() noexcept -> iterator {
     return m_data + m_size;
 }
 
-auto String::end() const noexcept -> const_iterator {
+auto String::end() const noexcept -> iterator {
     return m_data + m_size;
 }
 
-auto String::cend() const noexcept -> const_iterator {
+auto String::cend() const noexcept -> iterator {
     return m_data + m_size;
 }
 
@@ -808,24 +799,24 @@ auto String::rbegin() noexcept -> reverse_iterator {
     return reverse_iterator(end() - 1);
 }
 
-auto String::rbegin() const noexcept -> const_reverse_iterator {
-    return const_reverse_iterator(cend() - 1);
+auto String::rbegin() const noexcept -> reverse_iterator {
+    return reverse_iterator(cend() - 1);
 }
 
-auto String::crbegin() const noexcept -> const_reverse_iterator {
-    return const_reverse_iterator(cend() - 1);
+auto String::crbegin() const noexcept -> reverse_iterator {
+    return reverse_iterator(cend() - 1);
 }
 
 auto String::rend() noexcept -> reverse_iterator {
     return reverse_iterator(begin() - 1);
 }
 
-auto String::rend() const noexcept -> const_reverse_iterator {
-    return const_reverse_iterator(cbegin() - 1);
+auto String::rend() const noexcept -> reverse_iterator {
+    return reverse_iterator(cbegin() - 1);
 }
 
-auto String::crend() const noexcept -> const_reverse_iterator {
-    return const_reverse_iterator(cbegin() - 1);
+auto String::crend() const noexcept -> reverse_iterator {
+    return reverse_iterator(cbegin() - 1);
 }
 
 auto String::empty() const noexcept -> bool {
@@ -854,11 +845,11 @@ auto String::insert(size_type index, const String& str) noexcept -> String& {
     return insert(index, str.data(), str.size());
 }
 
-auto String::insert(const_iterator pos, value_type ch) noexcept -> iterator {
+auto String::insert(iterator pos, value_type ch) noexcept -> iterator {
     return insert(pos, 1, ch);
 }
 
-auto String::insert(const_iterator pos,
+auto String::insert(iterator pos,
         std::initializer_list<value_type> ilist) noexcept -> String& {
     return insert(size_type(pos - cbegin()), ilist.begin(), ilist.size());
 }
@@ -881,17 +872,17 @@ auto String::insert(size_type index, const String& str,
     return *this;
 }
 
-auto String::insert(const_iterator pos,
-        const_iterator first, const_iterator last) noexcept -> iterator {
+auto String::insert(iterator pos,
+        iterator first, iterator last) noexcept -> iterator {
     return insert(size_type(pos - cbegin()), StringView{first, last}, copy_n);
 }
 
-auto String::insert(const_iterator pos, size_type count,
+auto String::insert(iterator pos, size_type count,
         value_type ch) noexcept -> iterator {
     return insert(size_type(pos - cbegin()), StringView{&ch, count}, fill_n);
 }
 
-auto String::erase(const_iterator position) noexcept -> iterator {
+auto String::erase(iterator position) noexcept -> iterator {
     return erase(position, position + 1);
 }
 

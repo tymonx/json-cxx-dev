@@ -30,6 +30,7 @@ add_library(json-core OBJECT
     #parser.cpp
     #string_view.cpp
     #allocator.cpp
+    string_base.cpp
     string_view.cpp
     string_iterator.cpp
     string_reverse_iterator.cpp
@@ -63,6 +64,6 @@ if (CMAKE_CXX_COMPILER_ID MATCHES Clang)
     set_source_files_properties(allocator.cpp PROPERTIES
         COMPILE_FLAGS -Wno-exit-time-destructors)
 elseif (CMAKE_CXX_COMPILER_ID MATCHES GNU)
-    set_source_files_properties(string_view.cpp PROPERTIES
+    set_source_files_properties(string_base.cpp PROPERTIES
         COMPILE_FLAGS -Wno-conversion)
 endif()

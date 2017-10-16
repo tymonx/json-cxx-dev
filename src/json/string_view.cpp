@@ -55,8 +55,7 @@ static constexpr auto STRING_MAX_SIZE{std::numeric_limits<
 const StringView::size_type StringView::npos{STRING_MAX_SIZE + 1};
 
 StringView::StringView() noexcept :
-    m_fields{size_type(Unicode::UTF8), 0},
-    m_data{nullptr}
+    m_base{}
 { }
 
 StringView::StringView(const void* str) noexcept :
@@ -64,8 +63,7 @@ StringView::StringView(const void* str) noexcept :
 { }
 
 StringView::StringView(Unicode code, const void* str) noexcept :
-    m_fields{size_type(code), 0},
-    m_data{str}
+    m_base{code, const_cast<void*>(str), 0}
 {
     if (str) {
         auto count = max_size();
@@ -75,7 +73,7 @@ StringView::StringView(Unicode code, const void* str) noexcept :
             ++it;
         }
 
-        m_fields.m_size = utf_distance(m_data, it.base());
+        m_base = utf_distance(m_base, it.base());
     }
 }
 
@@ -85,8 +83,7 @@ StringView::StringView(const void* str, size_type count) noexcept :
 
 StringView::StringView(Unicode code, const void* str,
         size_type count) noexcept :
-    m_fields{size_type(code), 0},
-    m_data{str}
+    m_base{code, const_cast<void*>(str), 0}
 {
     if (str) {
         auto it = iterator{code, str};
@@ -95,51 +92,38 @@ StringView::StringView(Unicode code, const void* str,
             ++it;
         }
 
-        m_fields.m_size = utf_distance(m_data, it.base());
+        m_base = utf_distance(m_base, it.base());
     }
 }
 
 StringView::StringView(iterator first, iterator last) noexcept :
-    m_fields{size_type(first.unicode()), 0},
-    m_data{first.base()}
+    m_base{first.unicode(), const_cast<void*>(first.base()), 0}
 {
     if (first < last) {
-        m_fields.m_size = utf_distance(first.base(), last.base());
+        m_base = utf_distance(first.base(), last.base());
     }
 }
 
 StringView::StringView(StringView&& other) noexcept :
-    m_fields{other.m_fields},
-    m_data{other.m_data}
-{
-    other.m_fields.m_size = 0;
-    other.m_data = nullptr;
-}
+    m_base{other.m_base}
+{ }
 
 StringView::StringView(const StringView& other) noexcept :
-    m_fields{other.m_fields},
-    m_data{other.m_data}
+    m_base{other.m_base}
 { }
 
 auto StringView::operator=(StringView&& other) noexcept -> StringView& {
-    if (this != &other) {
-        m_fields = other.m_fields;
-        m_data = other.m_data;
-
-        other.m_fields.m_size = 0;
-        other.m_data = nullptr;
-    }
+    m_base = other.m_base;
     return *this;
 }
 
 auto StringView::operator=(const StringView& other) noexcept -> StringView& {
-    m_fields = other.m_fields;
-    m_data = other.m_data;
+    m_base = other.m_base;
     return *this;
 }
 
 auto StringView::empty() const noexcept -> bool {
-    return (0 == m_fields.m_size);
+    return (0 == m_base.size());
 }
 
 auto StringView::size() const noexcept -> size_type {
@@ -165,7 +149,7 @@ auto StringView::max_size() const noexcept -> size_type {
 }
 
 auto StringView::unicode() const noexcept -> Unicode {
-    return Unicode(m_fields.m_unicode);
+    return m_base.unicode();
 }
 
 auto StringView::at(difference_type n) const noexcept -> value_type {
@@ -189,7 +173,7 @@ auto StringView::begin() const noexcept -> iterator {
 }
 
 auto StringView::cbegin() const noexcept -> iterator {
-    return {unicode(), m_data};
+    return {m_base.unicode(), m_base};
 }
 
 auto StringView::end() const noexcept -> iterator {
@@ -197,7 +181,7 @@ auto StringView::end() const noexcept -> iterator {
 }
 
 auto StringView::cend() const noexcept -> iterator {
-    return {unicode(), pointer(m_data) + m_fields.m_size};
+    return {m_base.unicode(), pointer(m_base) + m_base.size()};
 }
 
 auto StringView::rbegin() const noexcept -> reverse_iterator {
@@ -213,7 +197,7 @@ auto StringView::rend() const noexcept -> reverse_iterator {
 }
 
 auto StringView::crend() const noexcept -> reverse_iterator {
-    return iterator{unicode(), pointer(m_data) - 1};
+    return iterator{m_base.unicode(), pointer(m_base) - 1};
 }
 
 auto StringView::substr(size_type pos,
@@ -302,19 +286,19 @@ void StringView::remove_prefix(size_type count) noexcept {
         ++it;
     }
 
-    m_data = it.base();
-    m_fields.m_size = utf_distance(m_data, it_end.base());
+    m_base = const_cast<void*>(it.base());
+    m_base = utf_distance(m_base, it_end.base());
 }
 
 void StringView::remove_suffix(size_type count) noexcept {
     auto it_begin = cbegin();
     auto it = cend();
 
-    while ((it_begin > it) && count--) {
+    while ((it_begin < it) && count--) {
         --it;
     }
 
-    m_fields.m_size = utf_distance(m_data, it.base());
+    m_base = utf_distance(m_base, it.base());
 }
 
 void StringView::swap(StringView& other) noexcept {

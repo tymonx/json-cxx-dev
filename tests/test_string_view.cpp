@@ -98,8 +98,6 @@ TEST(TestStringView, Constructor6) {
                 string2.cend(),
                 "abc"
             ));
-
-    EXPECT_EQ(0, string1.size());
 }
 
 TEST(TestStringView, Find1) {

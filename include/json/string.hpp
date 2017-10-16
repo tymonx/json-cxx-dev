@@ -25,7 +25,9 @@
 #ifndef JSON_STRING_HPP
 #define JSON_STRING_HPP
 
-#include "types.hpp"
+#include "string_base.hpp"
+#include "string_iterator.hpp"
+#include "string_reverse_iterator.hpp"
 
 #include <iterator>
 #include <initializer_list>
@@ -44,10 +46,8 @@ public:
     using pointer = value_type*;
     using const_pointer = const value_type*;
     using allocator_type = Allocator;
-    using iterator = pointer;
-    using const_iterator = const_pointer;
-    using reverse_iterator = std::reverse_iterator<iterator>;
-    using const_reverse_iterator = std::reverse_iterator<const_iterator>;
+    using iterator = StringIterator;
+    using reverse_iterator = StringReverseIterator;
 
     static const size_type npos;
 
@@ -75,10 +75,9 @@ public:
 
     String(const_pointer s, size_type count, allocator_type& alloc) noexcept;
 
-    String(const_iterator first, const_iterator last) noexcept;
+    String(iterator first, iterator last) noexcept;
 
-    String(const_iterator first, const_iterator last,
-            allocator_type& alloc) noexcept;
+    String(iterator first, iterator last, allocator_type& alloc) noexcept;
 
     String(const String& other, size_type pos, size_type count = npos) noexcept;
 
@@ -121,7 +120,7 @@ public:
 
     String& assign(std::initializer_list<value_type> ilist) noexcept;
 
-    String& assign(const_iterator first, const_iterator last) noexcept;
+    String& assign(iterator first, iterator last) noexcept;
 
     String& assign(const StringView& other) noexcept;
 
@@ -149,27 +148,27 @@ public:
 
     iterator begin() noexcept;
 
-    const_iterator begin() const noexcept;
+    iterator begin() const noexcept;
 
-    const_iterator cbegin() const noexcept;
+    iterator cbegin() const noexcept;
 
     iterator end() noexcept;
 
-    const_iterator end() const noexcept;
+    iterator end() const noexcept;
 
-    const_iterator cend() const noexcept;
+    iterator cend() const noexcept;
 
     reverse_iterator rbegin() noexcept;
 
-    const_reverse_iterator rbegin() const noexcept;
+    reverse_iterator rbegin() const noexcept;
 
-    const_reverse_iterator crbegin() const noexcept;
+    reverse_iterator crbegin() const noexcept;
 
     reverse_iterator rend() noexcept;
 
-    const_reverse_iterator rend() const noexcept;
+    reverse_iterator rend() const noexcept;
 
-    const_reverse_iterator crend() const noexcept;
+    reverse_iterator crend() const noexcept;
 
     void shrink_to_fit() noexcept;
 
@@ -234,8 +233,7 @@ public:
 
     ~String() noexcept;
 private:
-    size_type m_size;
-    pointer m_data;
+    StringBase m_base;
     allocator_type* m_allocator;
 };
 
