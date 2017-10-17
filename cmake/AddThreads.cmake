@@ -17,7 +17,10 @@ if (THREADS)
     set(THREADS_PREFER_PTHREAD_FLAG TRUE)
     find_package(Threads)
 
-    if (CMAKE_THREAD_LIBS_INIT)
+    if (CMAKE_USE_PTHREADS_INIT)
+        set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pthread")
+        message(STATUS "Threads enabled")
+    elseif (CMAKE_THREAD_LIBS_INIT)
         set(CMAKE_EXE_LINKER_FLAGS
             "${CMAKE_EXE_LINKER_FLAGS} ${CMAKE_THREAD_LIBS_INIT}")
         message(STATUS "Threads enabled")

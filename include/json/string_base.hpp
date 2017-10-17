@@ -30,69 +30,25 @@
 
 namespace json {
 
-class StringBase {
-public:
-    StringBase() noexcept;
-
-    StringBase(Unicode code, void* ptr, Size count) noexcept;
-
-    StringBase(StringBase&& other) noexcept;
-
-    StringBase(const StringBase& other) noexcept;
-
-    StringBase& operator=(StringBase&& other) noexcept;
-
-    StringBase& operator=(const StringBase& other) noexcept;
-
-    StringBase& operator=(void* ptr) noexcept;
-
-    template<typename T>
-    StringBase& operator=(T* ptr) noexcept;
-
-    StringBase& operator=(Size count) noexcept;
-
-    StringBase& operator=(Unicode code) noexcept;
-
-    Size size() const noexcept;
-
-    Unicode unicode() const noexcept;
-
-    operator void*() noexcept;
-
-    template<typename T>
-    operator T*() noexcept;
-
-    operator const void*() const noexcept;
-
-    template<typename T>
-    operator const T*() const noexcept;
-
-    ~StringBase() noexcept;
-private:
+struct StringBase {
     static constexpr auto UNICODE_WIDTH{3};
     static constexpr auto SIZE_WIDTH{(8 * sizeof(Size)) - UNICODE_WIDTH};
 
-    struct Fields {
-        Size m_unicode : UNICODE_WIDTH;
-        Size m_size : SIZE_WIDTH;
-    } m_fields;
-    void* m_data;
+    StringBase() noexcept = default;
+
+    StringBase(Unicode code, void* ptr, Size count) noexcept;
+
+    Size unicode : UNICODE_WIDTH;
+    Size size : SIZE_WIDTH;
+    void* data;
 };
 
-template<typename T> auto
-StringBase::operator=(T* ptr) noexcept -> StringBase& {
-    return this->operator=(static_cast<void*>(ptr));
-}
-
-template<typename T>
-StringBase::operator T*() noexcept {
-    return reinterpret_cast<T*>(this->operator void*());
-}
-
-template<typename T>
-StringBase::operator const T*() const noexcept {
-    return reinterpret_cast<const T*>(this->operator const void*());
-}
+inline
+StringBase::StringBase(Unicode code, void* ptr, Size count) noexcept :
+    unicode{Size(code)},
+    size{count},
+    data{ptr}
+{ }
 
 }
 

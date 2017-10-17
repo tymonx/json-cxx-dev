@@ -34,6 +34,9 @@ using json::StringView;
 static_assert(std::is_standard_layout<StringView>::value,
         "json::StringView is not a standard layout");
 
+static_assert(std::is_standard_layout<json::StringBase>::value,
+        "json::StringBase is not a standard layout");
+
 static auto pointer(const void* ptr) noexcept -> const std::uint8_t* {
     return reinterpret_cast<const std::uint8_t*>(ptr);
 }
@@ -73,7 +76,7 @@ StringView::StringView(Unicode code, const void* str) noexcept :
             ++it;
         }
 
-        m_base = utf_distance(m_base, it.base());
+        m_base.size = utf_distance(m_base.data, it.base());
     }
 }
 
@@ -92,7 +95,7 @@ StringView::StringView(Unicode code, const void* str,
             ++it;
         }
 
-        m_base = utf_distance(m_base, it.base());
+        m_base.size = utf_distance(m_base.data, it.base());
     }
 }
 
@@ -100,7 +103,7 @@ StringView::StringView(iterator first, iterator last) noexcept :
     m_base{first.unicode(), const_cast<void*>(first.base()), 0}
 {
     if (first < last) {
-        m_base = utf_distance(first.base(), last.base());
+        m_base.size = utf_distance(first.base(), last.base());
     }
 }
 
@@ -123,7 +126,7 @@ auto StringView::operator=(const StringView& other) noexcept -> StringView& {
 }
 
 auto StringView::empty() const noexcept -> bool {
-    return (0 == m_base.size());
+    return (0 == m_base.size);
 }
 
 auto StringView::size() const noexcept -> size_type {
@@ -149,7 +152,7 @@ auto StringView::max_size() const noexcept -> size_type {
 }
 
 auto StringView::unicode() const noexcept -> Unicode {
-    return m_base.unicode();
+    return Unicode(m_base.unicode);
 }
 
 auto StringView::at(difference_type n) const noexcept -> value_type {
@@ -173,7 +176,7 @@ auto StringView::begin() const noexcept -> iterator {
 }
 
 auto StringView::cbegin() const noexcept -> iterator {
-    return {m_base.unicode(), m_base};
+    return {unicode(), m_base.data};
 }
 
 auto StringView::end() const noexcept -> iterator {
@@ -181,7 +184,7 @@ auto StringView::end() const noexcept -> iterator {
 }
 
 auto StringView::cend() const noexcept -> iterator {
-    return {m_base.unicode(), pointer(m_base) + m_base.size()};
+    return {unicode(), pointer(m_base.data) + m_base.size};
 }
 
 auto StringView::rbegin() const noexcept -> reverse_iterator {
@@ -197,7 +200,7 @@ auto StringView::rend() const noexcept -> reverse_iterator {
 }
 
 auto StringView::crend() const noexcept -> reverse_iterator {
-    return iterator{m_base.unicode(), pointer(m_base) - 1};
+    return iterator{unicode(), pointer(m_base.data) - 1};
 }
 
 auto StringView::substr(size_type pos,
@@ -286,8 +289,8 @@ void StringView::remove_prefix(size_type count) noexcept {
         ++it;
     }
 
-    m_base = const_cast<void*>(it.base());
-    m_base = utf_distance(m_base, it_end.base());
+    m_base.data = const_cast<void*>(it.base());
+    m_base.size = utf_distance(m_base.data, it_end.base());
 }
 
 void StringView::remove_suffix(size_type count) noexcept {
@@ -298,7 +301,7 @@ void StringView::remove_suffix(size_type count) noexcept {
         --it;
     }
 
-    m_base = utf_distance(m_base, it.base());
+    m_base.size = utf_distance(m_base.data, it.base());
 }
 
 void StringView::swap(StringView& other) noexcept {

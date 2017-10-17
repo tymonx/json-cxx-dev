@@ -29,7 +29,6 @@
 #include "string_iterator.hpp"
 #include "string_reverse_iterator.hpp"
 
-#include <iterator>
 #include <initializer_list>
 
 namespace json {
@@ -124,47 +123,27 @@ public:
 
     String& assign(const StringView& other) noexcept;
 
-    reference at(size_type pos) noexcept;
+    Unicode unicode() const noexcept;
 
-    const_reference at(size_type pos) const noexcept;
+    value_type at(size_type pos) const noexcept;
 
-    reference operator[](size_type pos) noexcept;
+    value_type operator[](size_type pos) const noexcept;
 
-    const_reference operator[](size_type pos) const noexcept;
+    value_type front() const noexcept;
 
-    reference front() noexcept;
-
-    const_reference front() const noexcept;
-
-    reference back() noexcept;
-
-    const_reference back() const noexcept;
-
-    pointer data() noexcept;
-
-    const_pointer data() const noexcept;
-
-    const_pointer c_str() noexcept;
-
-    iterator begin() noexcept;
+    value_type back() const noexcept;
 
     iterator begin() const noexcept;
 
     iterator cbegin() const noexcept;
 
-    iterator end() noexcept;
-
     iterator end() const noexcept;
 
     iterator cend() const noexcept;
 
-    reverse_iterator rbegin() noexcept;
-
     reverse_iterator rbegin() const noexcept;
 
     reverse_iterator crbegin() const noexcept;
-
-    reverse_iterator rend() noexcept;
 
     reverse_iterator rend() const noexcept;
 
@@ -182,8 +161,6 @@ public:
 
     size_type length() const noexcept;
 
-    static size_type length(const_pointer s) noexcept;
-
     void clear() noexcept;
 
     String& insert(size_type index, size_type count, value_type ch) noexcept;
@@ -197,22 +174,21 @@ public:
     String& insert(size_type index, const String& str,
             size_type index_str, size_type count = npos) noexcept;
 
-    iterator insert(const_iterator pos, size_type count,
+    iterator insert(iterator pos, size_type count,
             value_type ch) noexcept;
 
-    String& insert(const_iterator pos,
+    String& insert(iterator pos,
             std::initializer_list<value_type> ilist) noexcept;
 
-    iterator insert(const_iterator pos, value_type ch) noexcept;
+    iterator insert(iterator pos, value_type ch) noexcept;
 
-    iterator insert(const_iterator pos, const_iterator first,
-            const_iterator last) noexcept;
+    iterator insert(iterator pos, iterator first, iterator last) noexcept;
 
     String& erase(size_type index = 0, size_type count = npos) noexcept;
 
-    iterator erase(const_iterator position) noexcept;
+    iterator erase(iterator position) noexcept;
 
-    iterator erase(const_iterator first, const_iterator last) noexcept;
+    iterator erase(iterator first, iterator last) noexcept;
 
     void resize(size_type count) noexcept;
 

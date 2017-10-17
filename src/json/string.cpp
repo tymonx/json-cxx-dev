@@ -29,6 +29,7 @@
 #include <limits>
 #include <utility>
 #include <algorithm>
+#include <functional>
 
 using json::String;
 
@@ -38,6 +39,11 @@ static_assert(std::is_standard_layout<String>::value,
         "json::String is not a standard layout");
 
 const json::Size String::npos = std::numeric_limits<json::Size>::max();
+
+static void copy(const void* src, json::Size count, void* dst) noexcept {
+    std::copy_n(reinterpret_cast<const std::uint8_t*>(src), count,
+            reinterpret_cast<std::uint8_t*>(dst));
+}
 
 String::String() noexcept :
     String{Allocator::get_instance()}
@@ -53,14 +59,23 @@ String::String(const String& other) noexcept :
 { }
 
 String::String(const String& other, allocator_type& alloc) noexcept :
-    String{other.data(), other.size(), alloc}
-{ }
+    m_base{other.m_base},
+    m_allocator{&alloc}
+{
+    m_base.data = allocator().allocate(other.m_base.size);
+    if (m_base.data) {
+        ::copy(other.m_base.data, other.m_base.size, m_base.data);
+    }
+    else {
+        m_base.size = 0;
+    }
+}
 
 String::String(String&& other) noexcept :
     m_base{other.m_base},
     m_allocator{&other.allocator()}
 {
-    other.m_base = nullptr;
+    other.m_base.data = nullptr;
 }
 
 String::String(String&& other, allocator_type& alloc) noexcept :
@@ -68,16 +83,10 @@ String::String(String&& other, allocator_type& alloc) noexcept :
     m_allocator{&other.allocator()}
 {
     if (&other.allocator() == &alloc) {
-        other.m_base = nullptr;
+        other.m_base.data = nullptr;
     }
     else {
-        m_base = allocator().allocate<value_type>(other.size());
-        if (data()) {
-            std::copy_n(other.data(), other.size(), data());
-        }
-        else {
-            m_base = size_type(0);
-        }
+        (*this) = std::cref(other);
     }
 }
 
@@ -86,15 +95,15 @@ String::String(size_type count, value_type ch) noexcept :
 { }
 
 String::String(size_type count, value_type ch, allocator_type& alloc) noexcept :
-    m_base{Unicode::UTF8, nullptr, count},
+    m_base{Unicode::UTF8, nullptr, 4 * count},
     m_allocator{&alloc}
 {
-    m_base = allocator().allocate<value_type>(count);
-    if (data()) {
+    m_base.data = allocator().allocate<std::uint32_t>(count);
+    if (m_base.data) {
         std::fill_n(data(), count, ch);
     }
     else {
-        m_base = size_type(0);
+        m_base.size = 0;
     }
 }
 
@@ -230,6 +239,10 @@ auto String::assign(iterator first,
     return assign(StringView{first, last});
 }
 
+auto String::unicode() const noexcept {
+    return Unicode(m_base.unicode);
+}
+
 auto String::at(size_type pos) noexcept -> reference {
     return *(data() + pos);
 }
@@ -268,29 +281,6 @@ auto String::data() noexcept -> pointer {
 
 auto String::data() const noexcept -> const_pointer {
     return m_base;
-}
-
-auto String::c_str() noexcept -> const_pointer {
-    String::const_pointer str = data();
-
-    if (str[size()] != '\0') {
-        if (size() < capacity()) {
-            const_cast<pointer>(str)[size()] = '\0';
-        }
-        else {
-            str = allocator().reallocate<value_type>(data(), size() + 1);
-            if (str) {
-                m_base = const_cast<pointer>(str);
-                //m_base[size()] = '\0';
-                m_base = m_base.size() + 1;
-            }
-            else {
-                str = EMPTY_STRING;
-            }
-        }
-    }
-
-    return str;
 }
 
 auto String::begin() noexcept -> iterator {
