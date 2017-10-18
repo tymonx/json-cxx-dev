@@ -32,8 +32,7 @@
 #include <functional>
 
 using json::String;
-
-static const String::value_type EMPTY_STRING[]{""};
+using json::Unicode;
 
 static_assert(std::is_standard_layout<String>::value,
         "json::String is not a standard layout");
@@ -43,6 +42,59 @@ const json::Size String::npos = std::numeric_limits<json::Size>::max();
 static void copy(const void* src, json::Size count, void* dst) noexcept {
     std::copy_n(reinterpret_cast<const std::uint8_t*>(src), count,
             reinterpret_cast<std::uint8_t*>(dst));
+}
+
+static void* utf8_encode(char32_t unicode, void* dst) noexcept {
+    auto utf8 = reinterpret_cast<std::uint8_t*>(dst);
+
+    if (unicode < 0x80) {
+        *utf8++ = std::uint8_t(unicode);
+    }
+    else if (unicode < 0x800) {
+        *utf8++ = 0xC0 | std::uint8_t(unicode >> 6);
+        *utf8++ = 0x80 | std::uint8_t(unicode & 0x3F);
+    }
+    else if (unicode < 0x10000) {
+        *utf8++ = 0xE0 | std::uint8_t(unicode >> 12);
+        *utf8++ = 0x80 | std::uint8_t((unicode >> 6) & 0x3F);
+        *utf8++ = 0x80 | std::uint8_t(unicode & 0x3F);
+    }
+    else {
+        *utf8++ = 0xF0 | std::uint8_t(unicode >> 18);
+        *utf8++ = 0x80 | std::uint8_t((unicode >> 12) & 0x3F);
+        *utf8++ = 0x80 | std::uint8_t((unicode >> 6) & 0x3F);
+        *utf8++ = 0x80 | std::uint8_t(unicode & 0x3F);
+    }
+
+    return utf8;
+}
+
+static void* utf16_encode(char32_t unicode, void* dst) noexcept {
+    auto utf16 = reinterpret_cast<std::uint16_t*>(dst);
+
+    if (unicode < 0x100000) {
+        *utf16++ = std::uint16_t(unicode);
+    }
+    else {
+        unicode -= 0x100000;
+        *utf16++ = 0xD800 + std::uint16_t(unicode >> 10);
+        *utf16++ = 0xDC00 + std::uint16_t(unicode & 0x3FF);
+    }
+
+    return utf16;
+}
+
+static void* utf32_encode(char32_t unicode, void* dst) noexcept {
+    auto utf32 = reinterpret_cast<std::uint32_t*>(dst);
+
+    *utf32++ = std::uint32_t(unicode);
+
+    return utf32;
+}
+
+static void* utf_fill(Unicode code, String::iterator first,
+        String::iterator last, char32_t unicode) noexcept {
+
 }
 
 String::String() noexcept :

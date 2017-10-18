@@ -39,7 +39,7 @@ class StringView;
 class String {
 public:
     using size_type = Size;
-    using value_type = Char;
+    using value_type = char32_t;
     using reference = value_type&;
     using const_reference = const value_type&;
     using pointer = value_type*;
