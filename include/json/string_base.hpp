@@ -36,6 +36,14 @@ struct StringBase {
 
     StringBase() noexcept = default;
 
+    StringBase(const StringBase& other) noexcept = default;
+
+    StringBase(StringBase&& other) noexcept = default;
+
+    StringBase& operator=(const StringBase& other) noexcept = default;
+
+    StringBase& operator=(StringBase&& other) noexcept = default;
+
     StringBase(Unicode code, void* ptr, Size count) noexcept;
 
     Size unicode : UNICODE_WIDTH;

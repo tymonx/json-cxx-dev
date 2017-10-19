@@ -52,19 +52,37 @@ public:
 
     String() noexcept;
 
+    String(Unicode encoding) noexcept;
+
     String(allocator_type& alloc) noexcept;
+
+    String(Unicode encoding, allocator_type& alloc) noexcept;
 
     String(const String& other) noexcept;
 
+    String(Unicode encoding, const String& other) noexcept;
+
     String(const String& other, allocator_type& alloc) noexcept;
+
+    String(Unicode encoding, const String& other,
+            allocator_type& alloc) noexcept;
 
     String(String&& other) noexcept;
 
+    String(Unicode encoding, String&& other) noexcept;
+
     String(String&& other, allocator_type& alloc) noexcept;
+
+    String(Unicode encoding, String&& other, allocator_type& alloc) noexcept;
 
     String(size_type count, value_type ch) noexcept;
 
+    String(Unicode encoding, size_type count, value_type ch) noexcept;
+
     String(size_type count, value_type ch, allocator_type& alloc) noexcept;
+
+    String(Unicode encoding, size_type count, value_type ch,
+            allocator_type& alloc) noexcept;
 
     String(const_pointer s) noexcept;
 
