@@ -110,6 +110,9 @@ void* Pool::allocate(Size size) noexcept {
                 static_cast<Header*>(address_end)->prev = header;
             }
         }
+        else {
+            m_bad_allocation = true;
+        }
     }
 
     return ptr;

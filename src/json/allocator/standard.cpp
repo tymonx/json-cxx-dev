@@ -31,11 +31,36 @@ using json::allocator::Standard;
 Standard::~Standard() noexcept { }
 
 void* Standard::allocate(Size size) noexcept {
-    return size ? std::malloc(size) : nullptr;
+    void* ptr;
+
+    if (size) {
+        ptr = std::malloc(size);
+        if (!ptr) {
+            m_bad_allocation = true;
+        }
+    }
+    else {
+        ptr = nullptr;
+    }
+
+    return ptr;
 }
 
 void* Standard::reallocate(void* ptr, Size size) noexcept {
-    return (ptr || size) ? std::realloc(ptr, size) : nullptr;
+    if (size) {
+        ptr = std::realloc(ptr, size);
+        if (!ptr) {
+            m_bad_allocation = true;
+        }
+    }
+    else if (ptr) {
+        ptr = std::realloc(ptr, size);
+    }
+    else {
+        ptr = nullptr;
+    }
+
+    return ptr;
 }
 
 void Standard::deallocate(void* ptr) noexcept {

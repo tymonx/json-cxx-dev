@@ -26,6 +26,16 @@
 
 using json::Allocator;
 
+bool Allocator::bad_allocation() const noexcept {
+    return m_bad_allocation;
+}
+
+bool Allocator::bad_allocation(std::uintptr_t) noexcept {
+    auto tmp = m_bad_allocation;
+    m_bad_allocation = false;
+    return tmp;
+}
+
 Allocator::~Allocator() noexcept { }
 
 #if defined(JSON_ALLOCATOR_BLOCK)

@@ -54,7 +54,13 @@ public:
 
     virtual Size size(const void* ptr) const noexcept = 0;
 
+    bool bad_allocation() const noexcept;
+
+    bool bad_allocation(std::uintptr_t) noexcept;
+
     virtual ~Allocator() noexcept;
+protected:
+    bool m_bad_allocation{false};
 private:
     Allocator(const Allocator&) = delete;
     Allocator& operator=(const Allocator&) = delete;
