@@ -33,6 +33,8 @@
 
 namespace json {
 
+class String;
+
 class StringView {
 public:
     using value_type = char32_t;
@@ -75,6 +77,8 @@ public:
     StringView(Unicode code, const void* str, size_type count) noexcept;
 
     StringView(iterator first, iterator last) noexcept;
+
+    StringView(const String& other) noexcept;
 
     StringView(StringView&& other) noexcept;
 

@@ -23,6 +23,7 @@
  */
 
 #include "json/string_view.hpp"
+#include "json/string.hpp"
 
 #include <limits>
 #include <cstdint>
@@ -100,12 +101,13 @@ StringView::StringView(Unicode code, const void* str,
 }
 
 StringView::StringView(iterator first, iterator last) noexcept :
-    m_base{first.unicode(), const_cast<void*>(first.base()), 0}
-{
-    if (first < last) {
-        m_base.size = utf_distance(first.base(), last.base());
-    }
-}
+    m_base{first.unicode(), const_cast<void*>(first.base()),
+        utf_distance(first.base(), last.base())}
+{ }
+
+StringView::StringView(const String& other) noexcept :
+    StringView{other.cbegin(), other.cend()}
+{ }
 
 StringView::StringView(StringView&& other) noexcept :
     m_base{other.m_base}

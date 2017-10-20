@@ -86,15 +86,29 @@ public:
 
     String(const_pointer s) noexcept;
 
+    String(Unicode encoding, const_pointer s) noexcept;
+
     String(const_pointer s, allocator_type& alloc) noexcept;
+
+    String(Unicode encoding, const_pointer s, allocator_type& alloc) noexcept;
 
     String(const_pointer s, size_type count) noexcept;
 
+    String(Unicode encoding, const_pointer s, size_type count) noexcept;
+
     String(const_pointer s, size_type count, allocator_type& alloc) noexcept;
+
+    String(Unicode encoding, const_pointer s, size_type count,
+            allocator_type& alloc) noexcept;
 
     String(iterator first, iterator last) noexcept;
 
+    String(Unicode encoding, iterator first, iterator last) noexcept;
+
     String(iterator first, iterator last, allocator_type& alloc) noexcept;
+
+    String(Unicode encoding, iterator first, iterator last,
+            allocator_type& alloc) noexcept;
 
     String(const String& other, size_type pos, size_type count = npos) noexcept;
 

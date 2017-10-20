@@ -34,6 +34,7 @@
 using json::Size;
 using json::String;
 using json::Unicode;
+using Iterator = json::String::iterator;
 
 static_assert(std::is_standard_layout<String>::value,
         "json::String is not a standard layout");
@@ -41,6 +42,7 @@ static_assert(std::is_standard_layout<String>::value,
 const json::Size String::npos = std::numeric_limits<json::Size>::max();
 
 using UtfEncode = void* (*)(char32_t unicode, void* dst);
+using UtfCopy = void (*)(Iterator first, Iterator last, void* dst);
 
 static std::uint16_t utf16_swap(std::uint16_t ch) noexcept {
     return std::uint16_t(ch << 8) | std::uint16_t(ch >> 8);
@@ -181,86 +183,6 @@ static Size utf_bytes(Unicode encoding, char32_t ch) noexcept {
     return bytes;
 }
 
-static Unicode utf_encoding(Unicode encoding) noexcept {
-    switch (encoding) {
-    case Unicode::UTF16:
-        encoding = Unicode::UTF16BE;
-        break;
-    case Unicode::UTF32:
-        encoding = Unicode::UTF32BE;
-        break;
-    case Unicode::UTF16BE:
-    case Unicode::UTF16LE:
-    case Unicode::UTF32BE:
-    case Unicode::UTF32LE:
-    case Unicode::UTF8:
-    default:
-        break;
-    }
-
-    return encoding;
-}
-
-static Unicode utf_encoding(const String& other) noexcept {
-    Unicode encoding = other.unicode();
-
-    switch (encoding) {
-    case Unicode::UTF16:
-        if (!other.empty() && (0xFFFE == other.front())) {
-            encoding = Unicode::UTF16LE;
-        }
-        else {
-            encoding = Unicode::UTF16BE;
-        }
-        break;
-    case Unicode::UTF32:
-        if (!other.empty() && (0xFFFE0000 == other.front())) {
-            encoding = Unicode::UTF32LE;
-        }
-        else {
-            encoding = Unicode::UTF32BE;
-        }
-        break;
-    case Unicode::UTF16BE:
-    case Unicode::UTF16LE:
-    case Unicode::UTF32BE:
-    case Unicode::UTF32LE:
-    case Unicode::UTF8:
-    default:
-        break;
-    }
-
-    return encoding;
-}
-
-static bool utf_length_equal(const String& other, Unicode encoding) noexcept {
-    bool equal = false;
-
-    switch (encoding) {
-    case Unicode::UTF8:
-        equal = (Unicode::UTF8 == other.unicode());
-        break;
-    case Unicode::UTF16:
-    case Unicode::UTF16BE:
-    case Unicode::UTF16LE:
-        equal = (Unicode::UTF16 == other.unicode()) ||
-            (Unicode::UTF16BE == other.unicode()) ||
-            (Unicode::UTF16LE == other.unicode());
-        break;
-    case Unicode::UTF32:
-    case Unicode::UTF32BE:
-    case Unicode::UTF32LE:
-        equal = (Unicode::UTF32 == other.unicode()) ||
-            (Unicode::UTF32BE == other.unicode()) ||
-            (Unicode::UTF32LE == other.unicode());
-        break;
-    default:
-        break;
-    }
-
-    return equal;
-}
-
 static char32_t utf_valid(char32_t ch) noexcept {
     return (((ch < 0xD800) || (ch > 0xDFFF)) && (ch < 0x110000))
         ? ch : 0xFFFD;
@@ -277,39 +199,136 @@ static void* utf_fill(Unicode encoding, char32_t ch, Size count,
     return dst;
 }
 
-static Size utf_length(const String& other) noexcept {
+template<typename T>
+static void utf_copy(Iterator first, Iterator last, void* dst) noexcept {
+    std::copy(reinterpret_cast<const T*>(first.base()),
+            reinterpret_cast<const T*>(last.base()),
+            reinterpret_cast<T*>(dst));
+}
+
+template<Unicode Encoding>
+static void utf_copy(Iterator first, Iterator last, void* dst) noexcept {
+    auto encode = utf_encode(Encoding);
+
+    while (first < last) {
+        dst = encode(*first++, dst);
+    }
+}
+
+static Unicode utf_normalize(Unicode encoding) noexcept {
+    switch (encoding) {
+    case Unicode::UTF16BE:
+    case Unicode::UTF16LE:
+        encoding = Unicode::UTF16;
+        break;
+    case Unicode::UTF32BE:
+    case Unicode::UTF32LE:
+        encoding = Unicode::UTF32;
+        break;
+    case Unicode::UTF8:
+    case Unicode::UTF16:
+    case Unicode::UTF32:
+    default:
+        break;
+    }
+
+    return encoding;
+}
+
+static Unicode utf_normalize(Iterator first, Iterator last) noexcept {
+    Unicode encoding = first.unicode();
+
+    if (Unicode::UTF16 == encoding) {
+        encoding = ((first < last) && (0x0000FFFE == *first))
+            ? Unicode::UTF16LE : Unicode::UTF16BE;
+    }
+    else if (Unicode::UTF32 == encoding) {
+        encoding = ((first < last) && (0xFFFE0000 == *first))
+            ? Unicode::UTF32LE : Unicode::UTF32BE;
+    }
+
+    return encoding;
+}
+
+static Size utf_length(Unicode encoding, Iterator first,
+        Iterator last) noexcept {
     Size count = 0;
 
-    auto it = other.cbegin();
-    auto it_end = other.cend();
-
-    while (it < it_end) {
-        count += utf_bytes(other.unicode(), *it++);
+    if (utf_normalize(encoding) == utf_normalize(first.unicode())) {
+        count = (first < last) ? Size(std::uintptr_t(last.base()) -
+                std::uintptr_t(first.base())) : 0;
+    }
+    else {
+        while (first < last) {
+            count += utf_bytes(encoding, *first++);
+        }
     }
 
     return count;
 }
 
-static void utf_copy(const void* first, const void* last, void* dst) noexcept {
-    std::copy(reinterpret_cast<const std::uint8_t*>(first),
-            reinterpret_cast<const std::uint8_t*>(last),
-            reinterpret_cast<std::uint8_t*>(dst));
+static Size utf_length(Unicode encoding, const String& other) noexcept {
+    return utf_length(encoding, other.cbegin(), other.cend());
 }
 
-static void utf_copy(Unicode encoding, String::iterator first,
-        String::iterator last, void* dst) noexcept {
-    encoding = utf_encoding(encoding);
+static UtfCopy utf8_copy_strategy(Unicode encoding) noexcept {
+    bool copy_fast = (Unicode::UTF8 == encoding);
+    return copy_fast ? utf_copy<std::uint8_t> : utf_copy<Unicode::UTF8>;
+}
 
-    if (utf_encoding(first.unicode()) == encoding) {
-        utf_copy(first.base(), last.base(), dst);
-    }
-    else {
-        auto encode = utf_encode(encoding);
+static UtfCopy utf16le_copy_strategy(Unicode encoding) noexcept {
+    bool copy_fast = (Unicode::UTF16LE == encoding);
+    return copy_fast ? utf_copy<std::uint16_t> : utf_copy<Unicode::UTF16LE>;
+}
 
-        while (first < last) {
-            dst = encode(*first++, dst);
-        }
+static UtfCopy utf16be_copy_strategy(Unicode encoding) noexcept {
+    bool copy_fast = (Unicode::UTF16BE == encoding);
+    return copy_fast ? utf_copy<std::uint16_t> : utf_copy<Unicode::UTF16BE>;
+}
+
+static UtfCopy utf32le_copy_strategy(Unicode encoding) noexcept {
+    bool copy_fast = (Unicode::UTF32LE == encoding);
+    return copy_fast ? utf_copy<std::uint32_t> : utf_copy<Unicode::UTF32LE>;
+}
+
+static UtfCopy utf32be_copy_strategy(Unicode encoding) noexcept {
+    bool copy_fast = (Unicode::UTF32BE == encoding);
+    return copy_fast ? utf_copy<std::uint32_t> : utf_copy<Unicode::UTF32BE>;
+}
+
+static UtfCopy utf_copy_strategy(Unicode encoding, Iterator first,
+        Iterator last) noexcept {
+    UtfCopy copy_strategy;
+
+    switch (encoding) {
+    case Unicode::UTF8:
+        copy_strategy = utf8_copy_strategy(first.unicode());
+        break;
+    case Unicode::UTF16:
+    case Unicode::UTF16BE:
+        copy_strategy = utf16be_copy_strategy(utf_normalize(first, last));
+        break;
+    case Unicode::UTF16LE:
+        copy_strategy = utf16le_copy_strategy(utf_normalize(first, last));
+        break;
+    case Unicode::UTF32:
+    case Unicode::UTF32BE:
+        copy_strategy = utf32be_copy_strategy(utf_normalize(first, last));
+        break;
+    case Unicode::UTF32LE:
+        copy_strategy = utf32le_copy_strategy(utf_normalize(first, last));
+        break;
+    default:
+        copy_strategy = nullptr;
+        break;
     }
+
+    return copy_strategy;
+}
+
+static UtfCopy utf_copy_strategy(Unicode encoding,
+        const String& other) noexcept {
+    return utf_copy_strategy(encoding, other.cbegin(), other.cend());
 }
 
 String::String() noexcept :
@@ -343,21 +362,8 @@ String::String(const String& other, allocator_type& alloc) noexcept :
 
 String::String(Unicode encoding, const String& other,
         allocator_type& alloc) noexcept :
-    m_base{encoding, nullptr, other.m_base.size},
-    m_allocator{&alloc}
-{
-    if (!utf_length_equal(other, encoding)) {
-        m_base.size = utf_length(other);
-    }
-
-    m_base.data = allocator().allocate(other.m_base.size);
-    if (m_base.data) {
-        utf_copy(encoding, other.cbegin(), other.cend(), m_base.data);
-    }
-    else {
-        m_base.size = 0;
-    }
-}
+    String{encoding, other.cbegin(), other.cend(), alloc}
+{ }
 
 String::String(String&& other) noexcept :
     m_base{other.m_base},
@@ -367,25 +373,23 @@ String::String(String&& other) noexcept :
 }
 
 String::String(Unicode encoding, String&& other) noexcept :
-    m_base{encoding, nullptr, 0},
-    m_allocator{&other.allocator()}
-{
-    if (other.unicode() == encoding) {
-        other.m_base.data = nullptr;
-    }
-    else {
-        (*this) = std::cref(other);
-    }
-}
+    String{encoding, std::move(other), other.allocator()}
+{ }
 
 String::String(String&& other, allocator_type& alloc) noexcept :
+    String{other.unicode(), std::move(other), alloc}
+{ }
+
+String::String(Unicode encoding, String&& other,
+        allocator_type& alloc) noexcept :
     m_base{other.m_base},
     m_allocator{&other.allocator()}
 {
-    if (&other.allocator() == &alloc) {
+    if ((&other.allocator() == &alloc) && (other.unicode() == encoding)) {
         other.m_base.data = nullptr;
     }
     else {
+        m_base = {encoding, nullptr, 0};
         (*this) = std::cref(other);
     }
 }
@@ -400,7 +404,7 @@ String::String(size_type count, value_type ch, allocator_type& alloc) noexcept :
 {
     ch = utf_valid(ch);
 
-    m_base.size = utf_bytes(Unicode::UTF8, ch) * count;
+    m_base.size = utf_bytes(Unicode::UTF8, utf_valid(ch)) * count;
     m_base.data = allocator().allocate(m_base.size);
     if (m_base.data) {
         utf_fill(unicode(), ch, count, m_base.data);
@@ -411,15 +415,28 @@ String::String(size_type count, value_type ch, allocator_type& alloc) noexcept :
 }
 
 String::String(const_pointer s) noexcept :
-    String{s, Allocator::get_instance()}
+    String{StringView{s}, Allocator::get_instance()}
+{ }
+
+String::String(Unicode encoding, const_pointer s) noexcept :
+    String{StringView{encoding, s}, Allocator::get_instance()}
 { }
 
 String::String(const_pointer s, allocator_type& alloc) noexcept :
-    String{s, length(s), alloc}
+    String{StringView{s}, alloc}
+{ }
+
+String::String(Unicode encoding, const_pointer s,
+        allocator_type& alloc) noexcept :
+    String{StringView{encoding, s}, alloc}
 { }
 
 String::String(const_pointer s, size_type count) noexcept :
-    String{s, count, Allocator::get_instance()}
+    String{StringView{s, count}, Allocator::get_instance()}
+{ }
+
+String::String(Unicode encoding, const_pointer s, size_type count) noexcept :
+    String{StringView{encoding, s, count}, Allocator::get_instance()}
 { }
 
 String::String(const_pointer s, size_type count,
@@ -427,14 +444,38 @@ String::String(const_pointer s, size_type count,
     String{StringView{s, count}, alloc}
 { }
 
+String::String(Unicode encoding, const_pointer s, size_type count,
+        allocator_type& alloc) noexcept :
+    String{StringView{encoding, s, count}, alloc}
+{ }
+
 String::String(iterator first, iterator last) noexcept :
-    String{first, last, Allocator::get_instance()}
+    String{first.unicode(), first, last, Allocator::get_instance()}
+{ }
+
+String::String(Unicode encoding, iterator first, iterator last) noexcept :
+    String{encoding, first, last, Allocator::get_instance()}
 { }
 
 String::String(iterator first, iterator last,
         allocator_type& alloc) noexcept :
-    String{StringView{first, last}, alloc}
+    String{first.unicode(), first, last, alloc}
 { }
+
+String::String(Unicode encoding, iterator first, iterator last,
+        allocator_type& alloc) noexcept :
+    m_base{encoding, nullptr, utf_length(encoding, first, last)},
+    m_allocator{&alloc}
+{
+    m_base.data = allocator().allocate(m_base.size);
+    if (m_base.data) {
+        auto copy_strategy = utf_copy_strategy(encoding, first, last);
+        copy_strategy(first, last, m_base.data);
+    }
+    else {
+        m_base.size = 0;
+    }
+}
 
 String::String(const String& other, size_type pos, size_type count) noexcept :
     String{other, pos, count, const_cast<String&>(other).allocator()}
