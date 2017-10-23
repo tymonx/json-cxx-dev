@@ -73,7 +73,7 @@ void* Block::allocate(Size size) noexcept {
                 ptr = header->allocator.allocate(size);
             }
             else {
-                m_bad_allocation = true;
+                raise_bad_allocation();
             }
         }
     }

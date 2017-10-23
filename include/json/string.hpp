@@ -60,20 +60,11 @@ public:
 
     String(const String& other) noexcept;
 
-    String(Unicode encoding, const String& other) noexcept;
-
     String(const String& other, allocator_type& alloc) noexcept;
-
-    String(Unicode encoding, const String& other,
-            allocator_type& alloc) noexcept;
 
     String(String&& other) noexcept;
 
-    String(Unicode encoding, String&& other) noexcept;
-
     String(String&& other, allocator_type& alloc) noexcept;
-
-    String(Unicode encoding, String&& other, allocator_type& alloc) noexcept;
 
     String(size_type count, value_type ch) noexcept;
 
@@ -84,31 +75,22 @@ public:
     String(Unicode encoding, size_type count, value_type ch,
             allocator_type& alloc) noexcept;
 
-    String(const_pointer s) noexcept;
+    String(const void* str) noexcept;
 
-    String(Unicode encoding, const_pointer s) noexcept;
+    String(const void* str, allocator_type& alloc) noexcept;
 
-    String(const_pointer s, allocator_type& alloc) noexcept;
+    String(Unicode encoding, const void* str, allocator_type& alloc) noexcept;
 
-    String(Unicode encoding, const_pointer s, allocator_type& alloc) noexcept;
+    String(const void* str, size_type count) noexcept;
 
-    String(const_pointer s, size_type count) noexcept;
+    String(const void* str, size_type count, allocator_type& alloc) noexcept;
 
-    String(Unicode encoding, const_pointer s, size_type count) noexcept;
-
-    String(const_pointer s, size_type count, allocator_type& alloc) noexcept;
-
-    String(Unicode encoding, const_pointer s, size_type count,
+    String(Unicode encoding, const void* str, size_type count,
             allocator_type& alloc) noexcept;
 
     String(iterator first, iterator last) noexcept;
 
-    String(Unicode encoding, iterator first, iterator last) noexcept;
-
     String(iterator first, iterator last, allocator_type& alloc) noexcept;
-
-    String(Unicode encoding, iterator first, iterator last,
-            allocator_type& alloc) noexcept;
 
     String(const String& other, size_type pos, size_type count = npos) noexcept;
 
@@ -117,7 +99,12 @@ public:
 
     String(std::initializer_list<value_type> ilist) noexcept;
 
+    String(Unicode encoding, std::initializer_list<value_type> ilist) noexcept;
+
     String(std::initializer_list<value_type> ilist,
+            allocator_type& alloc) noexcept;
+
+    String(Unicode encoding, std::initializer_list<value_type> ilist,
             allocator_type& alloc) noexcept;
 
     String(const StringView& other) noexcept;

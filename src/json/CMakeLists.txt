@@ -28,8 +28,8 @@ add_library(json-core OBJECT
     #list_iterator.cpp
     #string.cpp
     #parser.cpp
-    #string_view.cpp
-    #allocator.cpp
+    allocator.cpp
+    string.cpp
     string_view.cpp
     string_iterator.cpp
     string_reverse_iterator.cpp

@@ -36,6 +36,10 @@ bool Allocator::bad_allocation(std::uintptr_t) noexcept {
     return tmp;
 }
 
+void Allocator::raise_bad_allocation() noexcept {
+    m_bad_allocation = true;
+}
+
 Allocator::~Allocator() noexcept { }
 
 #if defined(JSON_ALLOCATOR_BLOCK)

@@ -111,7 +111,7 @@ void* Pool::allocate(Size size) noexcept {
             }
         }
         else {
-            m_bad_allocation = true;
+            raise_bad_allocation();
         }
     }
 

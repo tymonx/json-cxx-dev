@@ -60,8 +60,10 @@ public:
 
     virtual ~Allocator() noexcept;
 protected:
-    bool m_bad_allocation{false};
+    void raise_bad_allocation() noexcept;
 private:
+    bool m_bad_allocation{false};
+
     Allocator(const Allocator&) = delete;
     Allocator& operator=(const Allocator&) = delete;
 };

@@ -36,7 +36,7 @@ void* Standard::allocate(Size size) noexcept {
     if (size) {
         ptr = std::malloc(size);
         if (!ptr) {
-            m_bad_allocation = true;
+            raise_bad_allocation();
         }
     }
     else {
@@ -50,7 +50,7 @@ void* Standard::reallocate(void* ptr, Size size) noexcept {
     if (size) {
         ptr = std::realloc(ptr, size);
         if (!ptr) {
-            m_bad_allocation = true;
+            raise_bad_allocation();
         }
     }
     else if (ptr) {
